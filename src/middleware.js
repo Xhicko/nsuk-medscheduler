@@ -3,7 +3,18 @@ import { NextResponse } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
 const ADMIN_PUBLIC_PATHS     = ['/admin/login']
-const ADMIN_PROTECTED_PATHS  = ['/admin/dashboard', '/admin/settings']
+const ADMIN_PROTECTED_PATHS  = 
+[
+   '/admin/dashboard', 
+   '/admin/upload-student-data',
+   '/admin/students',
+   '/admin/faculties',
+   '/admin/departments',
+   '/admin/medical-forms',
+   '/admin/appointments',
+   '/admin/students-results',
+   '/admin/admin-management',
+]
 const ADMIN_RESTRICTED_PATHS = ['/admin/change-password', '/admin/users']
 
 const STUDENT_PUBLIC_PATHS    = ['/student/login', '/student/register']

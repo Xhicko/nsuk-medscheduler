@@ -39,7 +39,7 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent>
-            <form  className="space-y-2">
+            <form onSubmit={handleSubmit(HandleLogin)} className="space-y-2">
               <FloatingLabelInput
                 id="matricNumber"
                 label="Matric Number"

@@ -21,7 +21,6 @@ export default function AuthProvider({ initialUser, initialError, children }) {
     // 2) Listen for auth state changes
     const { data: listener } = client.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email)
         
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
@@ -49,7 +48,6 @@ export default function AuthProvider({ initialUser, initialError, children }) {
         // Handle initial error if passed from SSR
         if (initialError) {
           setError(initialError)
-          console.log(`Auth Error: ${initialError}`)
           setLoading(false)
           setInitialized(true)
           return
@@ -66,7 +64,6 @@ export default function AuthProvider({ initialUser, initialError, children }) {
         const { data: { user }, error: userError } = await supabase.auth.getUser()
 
         if (userError) {
-          console.log('User fetch error during init:', userError.message)
           // Don't show toast for normal "no session" errors
           if (!userError.message.includes('session_not_found')) {
             setError(userError)

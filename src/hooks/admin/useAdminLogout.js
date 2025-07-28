@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useAdminAuthStore } from '@/store/Admin/adminAuthStore'
+import { useAuthStore } from '@/store/authStore'
 import { toast } from 'react-hot-toast'
 
 export function useAdminLogout() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const signOut = useAdminAuthStore(state => state.signOut)
+  const signOut = useAuthStore(state => state.signOut)
 
   // Reset isLoggingOut when we reach the admin login page
   useEffect(() => {

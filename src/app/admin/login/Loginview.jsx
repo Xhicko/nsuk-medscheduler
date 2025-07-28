@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FloatingLabelInput } from "@/components/custom/floating-label-input"
 import LoginLogic from "./LoginLogic"
+import AccessInBridgeUI from "@/components/custom/Admin/AccessInBridgeUI"
 
 export default function LoginPage() {
  const {
+   handleSubmit,
+   HandleLogin,
    isTransitioning,
    buttonLoading,
    showPassword, 
@@ -25,6 +28,11 @@ export default function LoginPage() {
    errors,
    register} = LoginLogic()
 
+   
+   if (isTransitioning) {
+      return <AccessInBridgeUI />
+   }
+   
   return (
     <div className="flex items-center justify-center min-h-screen p-4 bg-white">
       <div className="w-full max-w-md">
@@ -38,7 +46,7 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent>
-            <form  className="space-y-2">
+            <form onSubmit={handleSubmit(HandleLogin)}  className="space-y-2">
               <FloatingLabelInput
                 id="MedicalID"
                 label="Medical ID"
