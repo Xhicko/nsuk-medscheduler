@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FloatingLabelInput } from "@/components/custom/floating-label-input"
 import LoginLogic from "./LoginLogic"
-import AccessInBridgeUI from "@/components/custom/Admin/AccessInBridgeUI"
+import AccessInBridge from "@/components/custom/admin/AccessInBridge"
 
 export default function LoginPage() {
  const {
@@ -30,7 +30,7 @@ export default function LoginPage() {
 
    
    if (isTransitioning) {
-      return <AccessInBridgeUI />
+      return <AccessInBridge />
    }
    
   return (
@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Card className="border-2 border-gray-100 shadow-lg">
           <CardHeader className="pb-8 text-center">
-            <div className="mx-auto w-16 h-16 bg-[#14C38E] rounded-full flex items-center justify-center mb-4">
+            <div className="mx-auto w-16 h-16 bg-[#0077B6] rounded-full flex items-center justify-center mb-4">
               <User className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-black">NSUK MEDICAL SCHEDULER</CardTitle>
@@ -78,7 +78,7 @@ export default function LoginPage() {
 
                <Button 
                   type="submit" 
-                  className="mb-4 p-6 w-full bg-[#14C38E] hover:bg-[#14c38fc9] text-white cursor-pointer"
+                  className="mb-4 p-6 w-full bg-[#0077B6] hover:bg-[#0077B6]/90 text-white cursor-pointer"
                   disabled={!isFormReadyToSubmit || isTransitioning}
                >
                   {buttonLoading ? (

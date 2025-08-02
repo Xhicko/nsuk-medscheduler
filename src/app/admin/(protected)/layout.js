@@ -1,4 +1,4 @@
-import NavigationView from "./Navigation/NaviationView"
+import NavigationView from "./Navigation/NavigationView"
 export default function ProtectedAdminLayout({ children }) {
   return (
     <NavigationView>

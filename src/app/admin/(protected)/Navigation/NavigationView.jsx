@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import NavigationLogic from "./NavigationLogic";
+import AccessOutBridge from "@/components/custom/admin/AccessOutBridge"
 const NavigationContent = ({children}) =>{
    const { logout, isLoggingOut } = useAdminLogout()
    const {
@@ -49,6 +50,7 @@ const NavigationContent = ({children}) =>{
       authInitialized,
       NavigationPathDropdown,
       NSUKMedSchedulizer,
+      profile
      } = NavigationLogic()
    
      const { state } = useSidebar()
@@ -74,13 +76,13 @@ const NavigationContent = ({children}) =>{
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full">
+                    <div className="flex items-center justify-center w-8 h-8 border-2 border-white rounded-full">
                       <Image
                         src={Logo}
                         alt="SCPC Logo"
                         width={30}
                         height={30}
-                        className="object-contain"
+                        className="object-contain rounded-full"
                         priority
                       />
                     </div>
@@ -112,7 +114,7 @@ const NavigationContent = ({children}) =>{
                       asChild={!item.onClick}
                       tooltip={item.title}
                       isActive={item.isActive}
-                      className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:px-0 hover:bg-white hover:text-[#14C38E] data-[active=true]:bg-white data-[active=true]:text-[#14C38E] transition-colors rounded text-white"
+                      className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:px-0 hover:bg-white hover:text-[#0077B6] data-[active=true]:bg-white data-[active=true]:text-[#0077B6] transition-colors rounded text-white"
                       onClick={() => item.onClick && item.onClick()}
                     >
                       {item.onClick ? (
@@ -155,7 +157,7 @@ const NavigationContent = ({children}) =>{
         </Sidebar>
   
         <main className="flex flex-col flex-1 w-full max-w-full min-w-0">
-          <header className={`fixed top-0 right-0 z-50 flex items-center h-[49px]  px-6  bg-[#14C38E] shadow-md transition-all duration-300 ${sidebarCollapsed ? 'md:pl-12' : 'md:pl-64'} left-0`}>
+          <header className={`fixed top-0 right-0 z-50 flex items-center h-[49px]  px-6  bg-[#0077B6] shadow-md transition-all duration-300 ${sidebarCollapsed ? 'md:pl-12' : 'md:pl-64'} left-0`}>
             <div className="flex items-center w-full p-2">
             {!authInitialized ? (
               <Skeleton className="w-6 h-6 mr-3 rounded" />
@@ -178,17 +180,23 @@ const NavigationContent = ({children}) =>{
   
               <div className="flex items-center gap-4 ml-auto">
             
-                {isAuthenticated && (
+                {(isAuthenticated || !authInitialized) && (
                   <>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative rounded-full h-9 w-9 hover:bg-green-500">
                           {!authInitialized ? (
-                            <Skeleton className="rounded-full h-9 w-9" />
+                           <>
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full animate-pulse">
+                              <Skeleton className="w-8 h-8 rounded-full" />
+                           </div>
+                           </>
                           ) : (
                             <Avatar className="border-2 border-white h-9 w-9">
                               <AvatarImage src="/placeholder.svg" alt="User" />
-                              <AvatarFallback className="bg-white text-[#14C38E] font-bold">AD</AvatarFallback>
+                              <AvatarFallback className="bg-white text-[#0077B6] font-bold">
+                                {profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : 'AD'}
+                              </AvatarFallback>
                             </Avatar>
                           )}
                         </Button>
@@ -199,9 +207,11 @@ const NavigationContent = ({children}) =>{
                             <Skeleton className="w-24 h-4" />
                           ) : (
                             <div className="flex flex-col space-y-1">
-                              <p className="text-sm font-medium leading-none">John Doe</p>
+                              <p className="text-sm font-medium leading-none">
+                                {profile?.medical_id || 'MED000000'}
+                              </p>
                               <p className="text-xs leading-none text-muted-foreground">
-                                john.doe@example.com
+                                {profile?.full_name  || 'admin@example.com'}
                               </p>
                             </div>
                           )}
@@ -227,15 +237,16 @@ const NavigationContent = ({children}) =>{
             </div>
           </header>
   
-          <div className="relative flex-1 mt-12 overflow-auto">
+          <div className="relative flex-1 p-2 mt-12 overflow-auto">
             {children}
-            {isLoggingOut && (
-              <div className="absolute inset-0 z-50">
-                <AccessOutBridgeUI />
-              </div>
-            )}
           </div>
         </main>
+        
+        {isLoggingOut && (
+          <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm">
+            <AccessOutBridge />
+          </div>
+        )}
       </div>
     )
 }

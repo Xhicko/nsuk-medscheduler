@@ -25,7 +25,7 @@ export const FloatingLabelInput = ({
     <div className="relative mb-6">
       {icon && (
         <div className="absolute z-10 -translate-y-1/2 left-3 top-1/2">
-          <div className="text-[#14C38E] w-5 h-5 flex items-center justify-center">{icon}</div>
+          <div className="text-[#0077B6] w-5 h-5 flex items-center justify-center">{icon}</div>
         </div>
       )}
 
@@ -33,14 +33,20 @@ export const FloatingLabelInput = ({
         id={id}
         type={type === "password" && showToggle ? (toggleState ? "text" : "password") : type}
         {...register}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={(e) => {
+          setIsFocused(true);
+          register.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setIsFocused(false);
+          register.onBlur?.(e);
+        }}
         className={`!h-14 ${icon ? "!pl-11" : "!pl-3"} !pr-3 !pt-4 !rounded !focus:ring-0 !focus:outline-none !focus:ring-offset-0 !bg-white
           ${
             errors
               ? "!border-red-500 !focus:border-red-500"
               : isValid
-                ? "!border-[#14C38E] !focus:border-[#14C38E]"
+                ? "!border-[#0077B6] !focus:border-[#0077B6]"
                 : "!border-[#000000] !focus:border-[#000000]"
           }`}
         {...props}
@@ -56,7 +62,7 @@ export const FloatingLabelInput = ({
           ${errors 
             ? "text-red-500" 
             : isValid 
-            ? "text-[#14C38E]" 
+            ? "text-[#0077B6]" 
             : "text-[#000000]"
          }`}
       >
@@ -74,7 +80,7 @@ export const FloatingLabelInput = ({
                    errors 
                    ? "!text-red-500" 
                    : isValid 
-                   ? "!text-[#14C38E]" 
+                   ? "!text-[#0077B6]" 
                    : "text-[#000000]"
                }`}
             />
@@ -84,7 +90,7 @@ export const FloatingLabelInput = ({
                   errors 
                   ? "!text-red-500" 
                   : isValid 
-                  ? "!text-[#14C38E]" 
+                  ? "!text-[#0077B6]" 
                   : "!text-[#000000]"
                }`}
             />

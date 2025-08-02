@@ -12,9 +12,11 @@ import {
    CalendarSync,
    ShieldEllipsis,
    LogOut,  
+   FileUser   
  } from 'lucide-react'
  import { Skeleton } from '@/components/ui/skeleton'
  import { useAuthStore } from '@/store/authStore'
+ import { useAdminStore } from '@/store/admin/adminStore'
 
 export default function NavigationLogic(){
    const pathname = usePathname()
@@ -23,11 +25,14 @@ export default function NavigationLogic(){
    const initialized = useAuthStore(state => state.initialized)
    const authInitialized = initialized && !loading
    const isAuthenticated = authInitialized && Boolean(user)
+   
+   // Get profile data from admin store
+   const profile = useAdminStore(state => state.profile)
 
    const NSUKMedSchedulizer = useMemo(() => ({
       name: 'NSUK MedSched',
       fullName: 'NSUK Medical Schedulizer',
-      rights: 'All rights reserved, Nsuk Medical Schedulizer 2025',
+      rights: 'All rights reserved, NSUK 2025',
     }), [])
  
 
@@ -46,12 +51,13 @@ export default function NavigationLogic(){
 
    const NavigationPathDropdown = useMemo(() => [
       { title: 'Admin Management', icon: ShieldEllipsis ,  url: '/admin/admin-management'},
+      { title: 'Profile', icon: FileUser  ,  url: '/admin/profile'},
       { title: 'Logout',    icon: LogOut,   url: '/admin/logout'},
     ], [])
 
    const skeletonNavigationPaths = () => {
-      const countedNavigationPaths = isAuthenticated ? navigationPaths.length : 0
-      return Array(countedNavigationPaths).fill(null).map((unused, index) => ({
+      const countedNavigationPaths = !authInitialized ? navigationPaths.length : 0
+      return Array(countedNavigationPaths).fill(null).map((_, index) => ({
         id: `skeleton-nav-${index}`,
         isSkeleton: true,
         title: '',
@@ -83,6 +89,7 @@ export default function NavigationLogic(){
       isAuthenticated,
       authInitialized,
       NavigationPathDropdown,
-      NSUKMedSchedulizer
+      NSUKMedSchedulizer,
+      profile
     }
 }

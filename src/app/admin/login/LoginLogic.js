@@ -10,6 +10,7 @@ import axios from "axios"
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { useAuthStore } from '@/store/authStore'
 import { useDashboardStore } from '@/store/admin/dashboardStore'
+import { useAdminStore } from '@/store/admin/adminStore'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 
@@ -67,7 +68,12 @@ export default function LoginLogic() {
 
          // Get store actions
          const { setUser, clearUser } = useAuthStore.getState()
+         const { setProfile, clearProfile } = useAdminStore.getState()
          const { setDashboardData, setError: setDashboardError } = useDashboardStore.getState()
+
+         // Clear any existing user data before login attempt
+         clearUser()
+         clearProfile()
 
 
          try{
@@ -76,9 +82,10 @@ export default function LoginLogic() {
                password:data.password
             })
             if(response.status === 200){
+                console.log('Response Data:', response.data)
+                console.log('Profile Data:', response.data.profile)
                 // Create Supabase client - this will automatically handle cookies
                 const supabase = createClientComponentClient()
-                console.log(response.data)
                 if(response.data.session){
                   try {
                      // Set the session from the server response
@@ -94,7 +101,7 @@ export default function LoginLogic() {
 
                      // Update the user metadata in the session to include the role
                      const { error: updateError } = await supabase.auth.updateUser({
-                        data: { role: response.data.role }
+                        data: { role: response.data.profile.role }
                      })
 
                      if (updateError) {
@@ -106,8 +113,11 @@ export default function LoginLogic() {
                   }
                 }
 
-                // Update store with user data
+                // Update auth store with user data
                 setUser(response.data.user)
+                
+                // Update admin store with profile data
+                setProfile(response.data.profile)
 
                  // Start transition and navigate
                 setIsTransitioning(true)
@@ -136,6 +146,7 @@ export default function LoginLogic() {
          catch(error) {
             // Clear user in zustand store on login failure
             clearUser()
+            clearProfile()
             if (error.response) {
                const errorMessage = error.response.data.error || error.response.data.message || "Login failed. Please try again."
                toast.error(errorMessage)

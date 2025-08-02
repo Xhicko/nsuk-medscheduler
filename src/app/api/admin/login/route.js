@@ -1,4 +1,3 @@
-// src/app/api/admin/login/route.ts
 import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
@@ -37,7 +36,6 @@ export async function POST(request) {
     )
     
     // First, get the auth_user_id from medical_id
-
     const { data: adminLookup, error: lookupError } = await service
       .from('admins')
       .select('auth_user_id')
@@ -67,9 +65,6 @@ export async function POST(request) {
       password: cleanPassword
     })
 
-    console.log('→ userResponse:', userResponse.user.email)
-    console.log('Auth Error:', authError)
-
     if (authError || !authData.session) {
       return NextResponse.json(
         { error: 'Authentication failed - no session created.' },
@@ -77,17 +72,10 @@ export async function POST(request) {
       )
     }
 
-    // Log the JWT token after successful authentication
-    console.log('→ Authentication successful!')
-    console.log('→ User ID:', authData.user.id)
-    console.log('→ Session Token:', authData.session.access_token)
-    console.log('→ Refresh Token:', authData.session.refresh_token)
-    console.log('→ Token Expires:', new Date(authData.session.expires_at * 1000).toISOString())
-
     // Fetch full admin record for validation
     const { data: admin, error: fetchError } = await service
       .from('admins')
-      .select('role, is_active, is_email_verified')
+      .select('role, is_active,full_name, medical_id, is_email_verified')
       .eq('auth_user_id', authData.user.id)
       .single()
 
@@ -120,10 +108,17 @@ export async function POST(request) {
       )
     }
 
-    return NextResponse.json(
-      { message: 'Login successful', role: admin.role },
-      { status: 200 }
-    )
+    return NextResponse.json({
+      message: 'Login successful',
+      user: authData.user,
+      session: authData.session,
+      profile: {
+        medical_id: admin.medical_id,
+        full_name: admin.full_name,
+        email: authData.user.email, 
+        role: admin.role
+      }
+    }, { status: 200 })
 
   } catch (err) {
     console.error('Admin login error:', err)

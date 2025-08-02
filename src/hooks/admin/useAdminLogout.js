@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
+import { useAdminStore } from '@/store/admin/adminStore'
 import { toast } from 'react-hot-toast'
 
 export function useAdminLogout() {
@@ -10,6 +11,7 @@ export function useAdminLogout() {
   const router = useRouter()
   const pathname = usePathname()
   const signOut = useAuthStore(state => state.signOut)
+  const clearProfile = useAdminStore(state => state.clearProfile)
 
   // Reset isLoggingOut when we reach the admin login page
   useEffect(() => {
@@ -29,6 +31,9 @@ export function useAdminLogout() {
     setIsLoggingOut(true)
     
     try {
+      // Clear admin profile data
+      clearProfile()
+      
       // Then sign out
       await signOut()
       

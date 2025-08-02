@@ -9,9 +9,9 @@ export const useAuthStore = create(
     initialized: false,       
     error: null,
 
-    setUser: (user) => 
+    setUser: (user, profile = null) => 
      set({ 
-       user, 
+       user: profile ? { ...user, profile } : user, 
        error: null, 
        initialized: true 
      }),

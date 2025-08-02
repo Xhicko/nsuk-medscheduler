@@ -13,17 +13,24 @@ export const useDashboardStore = create(
     initialized: false,
 
     // Simple getters, matching RPC keys
-    getStats: () => ({
-      appointmentsToday:    get().dashboardData?.appointmentsToday    ?? 0,
-      appointmentsThisWeek: get().dashboardData?.appointmentsThisWeek ?? 0,
-      appointmentsThisMonth:get().dashboardData?.appointmentsThisMonth?? 0,
-      approvedBloodResults: get().dashboardData?.approvedBloodResults ?? 0,
-      totalUnactivatedStudentsThisWeek: get().dashboardData?.totalUnactivatedStudentsThisWeek ?? 0,
-      totalActivatedStudentsThisWeek:   get().dashboardData?.totalActivatedStudentsThisWeek   ?? 0,
-      totalMissedAppointments:         get().dashboardData?.totalMissedAppointments         ?? 0,
-      upcomingAppointments:            get().dashboardData?.upcomingAppointments            ?? 0,
-      pendingBloodResults:             get().dashboardData?.pendingBloodResults             ?? 0,
-    }),
+    getStats: () => {
+      const dashboardData = get().dashboardData
+      console.log('getStats - dashboardData:', dashboardData)
+      console.log('getStats - stats:', dashboardData?.stats)
+      
+      return {
+        appointmentsToday:    dashboardData?.stats?.appointmentsToday    ?? 0,
+        appointmentsThisWeek: dashboardData?.stats?.appointmentsThisWeek ?? 0,
+        appointmentsThisMonth:dashboardData?.stats?.appointmentsThisMonth?? 0,
+        approvedBloodResults: dashboardData?.stats?.approvedBloodResults ?? 0,
+        totalUnactivatedStudentsThisWeek: dashboardData?.stats?.totalUnactivatedStudentsThisWeek ?? 0,
+        totalActivatedStudentsThisWeek:   dashboardData?.stats?.totalActivatedStudentsThisWeek   ?? 0,
+        totalMissedAppointments:         dashboardData?.stats?.totalMissedAppointments         ?? 0,
+        totalCompletedAppointments:      dashboardData?.stats?.completedAppointments      ?? 0,
+        upcomingAppointments:            dashboardData?.stats?.upcomingAppointments            ?? 0,
+        pendingBloodResults:             dashboardData?.stats?.pendingBloodResults             ?? 0,
+      }
+    },
 
     getRecentMedicalForms: () => get().dashboardData?.recentMedicalForms    ?? [],
     getTodaysAppointments:   () => get().dashboardData?.todaysAppointments   ?? [],
@@ -57,6 +64,10 @@ export const useDashboardStore = create(
           timeout: 30000,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         })
+        
+        console.log('Dashboard API Response:', response.data)
+        console.log('Dashboard API Response Stats:', response.data?.stats)
+        
         set({
           dashboardData: response.data,
           loading: false,
@@ -64,6 +75,8 @@ export const useDashboardStore = create(
           lastFetched: Date.now(),
           initialized: true
         })
+        
+        console.log('Stored Dashboard Data:', get().dashboardData)
         return response.data
       } catch (err) {
         console.error('Dashboard fetch error:', err)
