@@ -123,7 +123,21 @@ const NavigationContent = ({children}) =>{
                           <span className="ml-2 group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </div>
                       ) : (
-                        <Link href={item.url || '#'} data-active={item.isActive} className="flex items-center w-full group-data-[collapsible=icon]:justify-center">
+                        <Link 
+                          href={item.url || '#'} 
+                          prefetch={true}
+                          data-active={item.isActive} 
+                          className="flex items-center w-full group-data-[collapsible=icon]:justify-center"
+                          onMouseEnter={() => {
+                            // Trigger prefetch on hover for even faster navigation
+                            if (item.url && item.url !== '#') {
+                              const link = document.createElement('link')
+                              link.rel = 'prefetch'
+                              link.href = item.url
+                              document.head.appendChild(link)
+                            }
+                          }}
+                        >
                           <item.icon className="w-5 h-5" />
                           <span className="ml-2 group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </Link>

@@ -18,6 +18,26 @@ import {
  import { useAuthStore } from '@/store/authStore'
  import { useAdminStore } from '@/store/admin/adminStore'
 
+// Move static data outside component to prevent recreation
+const NSUKMedSchedulizer = {
+  name: 'NSUK MedSched',
+  fullName: 'NSUK Medical Schedulizer', 
+  rights: 'All rights reserved, NSUK 2025',
+}
+
+// Pre-define navigation base paths (without isActive) for better performance
+const navigationBasePaths = [
+  { title: 'Dashboard', icon: Compass, url: '/admin/dashboard', id:'dashboard' },
+  { title: 'Upload Students Data', icon: UserRoundPlus, url: '/admin/upload-student-data', id:'upload-student-data' },
+  { title: 'Students', icon: UserRoundCheck, url: '/admin/students', id:'students' },
+  { title: 'Faculties', icon: University, url: '/admin/faculties', id:'faculties' },
+  { title: 'Departments', icon: Layers, url: '/admin/departments', id:'departments' },
+  { title: 'Medical Forms', icon: ClipboardPlus, url: '/admin/medical-forms', id:'medical-forms' },
+  { title: 'Appointments', icon: CalendarSync, url: '/admin/appointments', id:'appointments' },
+  { title: 'Students Results', icon: BellRing, url: '/admin/students-results', id:'students-results' },
+  { title: 'Admin Management', icon: ShieldEllipsis, url: '/admin/admin-management', id:'admin-management' },
+]
+
 export default function NavigationLogic(){
    const pathname = usePathname()
    const user = useAuthStore(state => state.user)
@@ -29,24 +49,12 @@ export default function NavigationLogic(){
    // Get profile data from admin store
    const profile = useAdminStore(state => state.profile)
 
-   const NSUKMedSchedulizer = useMemo(() => ({
-      name: 'NSUK MedSched',
-      fullName: 'NSUK Medical Schedulizer',
-      rights: 'All rights reserved, NSUK 2025',
-    }), [])
- 
-
-   const navigationPaths = useMemo(() => [
-      { title: 'Dashbaord',icon: Compass,  url: '/admin/dashboard',id:'dashboard', isActive: pathname === '/admin/dashboard'},
-      { title: 'Upload Students Data', icon: UserRoundPlus,url: '/admin/upload-student-data', id:'upload-student-data', isActive: pathname === '/admin/upload-student-data'},
-      { title: 'Students',icon: UserRoundCheck,  url: '/admin/students',id:'students', isActive: pathname === '/admin/students'},
-      { title: 'Faculties',icon: University,  url: '/admin/faculties',id:'faculties', isActive: pathname === '/admin/faculties'},
-      { title: 'Departments',icon: Layers,  url: '/admin/departments',id:'departments', isActive: pathname === '/admin/departments'},
-      { title: 'Medical Forms',icon: ClipboardPlus ,  url: '/admin/medical-forms',id:'medical-forms', isActive: pathname === '/admin/medical-forms'},
-      { title: 'Appointments',icon: CalendarSync,  url: '/admin/appointments',id:'appointments', isActive: pathname === '/admin/appointments'},
-      { title: 'Students Results',icon:BellRing,  url: '/admin/students-results',id:'students-results', isActive: pathname === '/admin/students-results'},
-      { title: 'Admin Management',icon:ShieldEllipsis ,  url: '/admin/admin-management',id:'admin-management', isActive: pathname === '/admin/admin-management'},
-    ], [pathname]
+   // Only add isActive property when pathname changes (more efficient)
+   const navigationPaths = useMemo(() => 
+     navigationBasePaths.map(path => ({
+       ...path,
+       isActive: pathname === path.url
+     })), [pathname]
    )
 
    const NavigationPathDropdown = useMemo(() => [

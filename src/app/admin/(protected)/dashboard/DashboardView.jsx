@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/card';
 import {Badge}  from '@/components/ui/badge'
 import {Button} from '@/components/ui/button'
-import { DataTable } from '@/components/custom/admin/DataTable'
+import {DataTable} from '@/components/custom/admin/data-table'
 export default function DashboardView(){
 
    const {

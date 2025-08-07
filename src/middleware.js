@@ -21,7 +21,12 @@ const STUDENT_PUBLIC_PATHS    = ['/student/login', '/student/register']
 const STUDENT_PROTECTED_PATHS = ['/student/dashboard']
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
+  matcher: [
+    // Only run middleware on routes that actually need auth checks
+    '/admin/((?!login$).*)',
+    '/student/((?!login$|register$).*)',
+    '/'
+  ],
 }
 
 export default async function middleware(request) {
@@ -38,9 +43,10 @@ export default async function middleware(request) {
     return NextResponse.redirect(new URL('/student/login', request.url))
   }
 
-  // 2) Get Supabase session + user
+  // 2) Get Supabase session (faster than getUser)
   const supabase = createMiddlewareClient({ req: request, res: response })
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   // 3) Determine role safely
   const role = user?.user_metadata?.role ?? 'anon'

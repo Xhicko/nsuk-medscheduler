@@ -5,16 +5,8 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
-// Main handler to process all requests
+// Main handler to process POST requests only (GET removed - use /api/admin/departments)
 export async function POST(request) {
-  return handleRequest(request, 'POST')
-}
-
-export async function GET(request) {
-  return handleRequest(request, 'GET')
-}
-
-async function handleRequest(request, method) {
     try {
          const cookieStore = await cookies()
          const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
@@ -36,59 +28,9 @@ async function handleRequest(request, method) {
             )
          }
 
-                   // Handle GET requests
-          if (method === 'GET') {
-             // Get all departments with their faculty names in a single query
-             const { data, error } = await supabase
-                .from('departments')
-                .select(`
-                   id,
-                   name,
-                   faculty_id,
-                   faculties (
-                      id,
-                      name
-                   )
-                `)
-                .order('name')
-
-             if (error) {
-                console.error('Error fetching data:', error)
-                return NextResponse.json(
-                   { error: 'Failed to fetch data' },
-                   { status: 500 }
-                )
-             }
-
-             // Organize the data by faculties
-             const faculties = {}
-             data.forEach(dept => {
-                const faculty = dept.faculties
-                if (!faculties[faculty.id]) {
-                   faculties[faculty.id] = {
-                      id: faculty.id,
-                      name: faculty.name,
-                      departments: []
-                   }
-                }
-                faculties[faculty.id].departments.push({
-                   id: dept.id,
-                   name: dept.name,
-                   faculty_id: dept.faculty_id
-                })
-             })
-
-
-             return NextResponse.json(
-               { faculties: Object.values(faculties) },
-               { status: 200 }
-             )
-          }
-
-         // Handle POST requests
-         if (method === 'POST') {
-            const contentType = request.headers.get('content-type');
-            let students = [];
+        // Handle POST requests for student data upload
+        const contentType = request.headers.get('content-type');
+        let students = [];
             
             // Check if this is a file upload (bulk) or JSON data (manual)
             if (contentType && contentType.includes('multipart/form-data')) {
@@ -348,13 +290,11 @@ async function handleRequest(request, method) {
                  { message, results, success: successCount, errors: errorCount },
                  { status: 200 }
                );
-            }
-    }
-    catch(error){
-    console.error('Student Data API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    } catch(error) {
+        console.error('Student Data API error:', error)
+        return NextResponse.json(
+          { error: 'Internal server error' },
+          { status: 500 }
+        )
     }
 }

@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import axios from "axios"
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import {toast} from 'react-hot-toast'
+import useDepartmentsStore from '@/store/admin/departmentsStore'
 
 const studentSchema = z.object({
   matricNumber: z
@@ -65,14 +66,16 @@ export default function UploadDataLogic(){
    const [filePreview, setFilePreview] = useState(null)
    const [bulkUploadLoading, setBulkUploadLoading] = useState(false)
 
-   // API data states
-   const [facultiesData, setFacultiesData] = useState([])
-   const [loading, setLoading] = useState(false)
-
-   // Derived state for UI
-   const faculties = facultiesData
-   // Helper to get departments for a specific faculty id
-   const getDepartments = (facultyId) => facultiesData.find(f => f.id === facultyId)?.departments || []
+   // Get departments data from store
+   const { 
+      faculties, 
+      loading,
+      getDepartmentsByFaculty 
+   } = useDepartmentsStore()
+   
+   // Derived state for UI (backward compatibility)
+   const facultiesData = faculties
+   const getDepartments = getDepartmentsByFaculty
    // Bulk upload logic
    const handleBulkFileChange = (e) => {
      const file = e.target.files?.[0] || null
@@ -305,32 +308,6 @@ export default function UploadDataLogic(){
    });
 
 
-
-   // Fetch faculties and departments on component mount
-   useEffect(() => {
-      fetchFacultiesAndDepartments()
-   }, [])
-
-   // API function to fetch faculties and departments
-   const fetchFacultiesAndDepartments = async () => {
-      setLoading(true)
-      try {
-         const response = await axios.get(ADMIN_ENDPOINTS.UPLOAD_STUDENT_DATA)
-         console.log("Response Data:", response.data)
-         
-          if(response.status === 200){
-            setFacultiesData(response.data.faculties || [])
-          }
-          else{
-            setFacultiesData([])
-          }
-      } catch (error) {
-         console.error('Error fetching data:', error)
-         setFacultiesData([])
-      } finally {
-         setLoading(false)
-      }
-   }
 
    // Per-student faculty/department change handlers
    const handleFacultyChange = (index, value) => {
