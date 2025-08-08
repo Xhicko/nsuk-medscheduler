@@ -71,59 +71,147 @@ async function handleRequest(request, method) {
 // GET: Fetch all departments with their faculties
 async function handleGetDepartments(request, supabase) {
   try {
-    // Get all departments with their faculty names in a single query
-    const { data, error } = await supabase
-      .from('departments')
-      .select(`
-        id,
-        name,
-        code,
-        faculty_id,
-        created_at,
-        updated_at,
-        faculties (
-          id,
-          name
-        )
-      `)
-      .order('name')
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page')) || 1
+    const limit = parseInt(searchParams.get('limit')) || 10
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || 'all'
+    const faculty_id = searchParams.get('faculty_id') || 'all'
 
-    if (error) {
-      console.error('Error fetching departments:', error)
+    // Check if pagination is requested
+    const isPaginated = searchParams.has('page') || searchParams.has('limit')
+
+    if (isPaginated) {
+      // New paginated logic for admin dashboard
+      const offset = (page - 1) * limit
+
+      // Build query for paginated results
+      let query = supabase
+        .from('departments')
+        .select(`
+          id,
+          name,
+          code,
+          faculty_id,
+          status,
+          created_at,
+          updated_at,
+          faculties:faculty_id (
+            id,
+            name,
+            status
+          )
+        `)
+
+      // Apply search filter
+      if (search.trim()) {
+        query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`)
+      }
+
+      // Apply status filter
+      if (status !== 'all') {
+        query = query.eq('status', status)
+      }
+
+      // Apply faculty filter
+      if (faculty_id !== 'all') {
+        query = query.eq('faculty_id', faculty_id)
+      }
+
+      // Get total count for pagination
+      const { data: countData, error: countError } = await query
+
+      if (countError) {
+        console.error('Error getting departments count:', countError)
+        return NextResponse.json(
+          { error: 'Failed to get departments count' },
+          { status: 500 }
+        )
+      }
+
+      const totalCount = countData?.length || 0
+
+      // Get paginated data
+      const { data: departments, error } = await query
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (error) {
+        console.error('Error fetching departments:', error)
+        return NextResponse.json(
+          { error: 'Failed to fetch departments' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        departments: departments || [],
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: offset + limit < totalCount
+      })
+
+    } else {
+      // Original logic for backward compatibility
+      // Get all departments with their faculty names in a single query
+      const { data, error } = await supabase
+        .from('departments')
+        .select(`
+          id,
+          name,
+          code,
+          faculty_id,
+          status,
+          created_at,
+          updated_at,
+          faculties (
+            id,
+            name,
+            status
+          )
+        `)
+        .order('name')
+
+      if (error) {
+        console.error('Error fetching departments:', error)
+        return NextResponse.json(
+          { error: 'Failed to fetch departments' },
+          { status: 500 }
+        )
+      }
+
+      // Organize the data by faculties (original structure)
+      const faculties = {}
+      data.forEach(dept => {
+        const faculty = dept.faculties
+        if (!faculties[faculty.id]) {
+          faculties[faculty.id] = {
+            id: faculty.id,
+            name: faculty.name,
+            status: faculty.status,
+            departments: []
+          }
+        }
+        faculties[faculty.id].departments.push({
+          id: dept.id,
+          name: dept.name,
+          code: dept.code,
+          faculty_id: dept.faculty_id,
+          status: dept.status,
+          created_at: dept.created_at,
+          updated_at: dept.updated_at
+        })
+      })
+
       return NextResponse.json(
-        { error: 'Failed to fetch departments' },
-        { status: 500 }
+        { 
+          faculties: Object.values(faculties),
+          departments: data 
+        },
+        { status: 200 }
       )
     }
-
-    // Organize the data by faculties
-    const faculties = {}
-    data.forEach(dept => {
-      const faculty = dept.faculties
-      if (!faculties[faculty.id]) {
-        faculties[faculty.id] = {
-          id: faculty.id,
-          name: faculty.name,
-          departments: []
-        }
-      }
-      faculties[faculty.id].departments.push({
-        id: dept.id,
-        name: dept.name,
-        code: dept.code,
-        faculty_id: dept.faculty_id,
-        created_at: dept.created_at,
-        updated_at: dept.updated_at
-      })
-    })
-
-    return NextResponse.json(
-      { 
-        faculties: Object.values(faculties),
-        departments: data 
-      },
-      { status: 200 }
-    )
 
   } catch (error) {
     console.error('Error in handleGetDepartments:', error)
@@ -138,94 +226,102 @@ async function handleGetDepartments(request, supabase) {
 async function handleCreateDepartment(request, supabase) {
   try {
     const body = await request.json()
-    const { name, code, facultyId } = body
+    const { name, code, faculty_id, status = 'pending' } = body
 
-    // Validate required fields
-    if (!name || !facultyId) {
+    // Validation
+    if (!name?.trim()) {
       return NextResponse.json(
-        { error: 'Missing required fields: name and facultyId' },
+        { error: 'Department name is required' },
         { status: 400 }
       )
     }
 
-    // Validate name length
-    if (name.trim().length < 2) {
+    if (!faculty_id) {
       return NextResponse.json(
-        { error: 'Department name must be at least 2 characters long' },
+        { error: 'Faculty selection is required' },
         { status: 400 }
       )
     }
 
-    // Check if faculty exists
-    const { data: faculty, error: facultyErr } = await supabase
+    // Verify faculty exists and is verified
+    const { data: faculty, error: facultyError } = await supabase
       .from('faculties')
-      .select('id, name')
-      .eq('id', facultyId)
+      .select('id, status')
+      .eq('id', faculty_id)
       .single()
 
-    if (facultyErr || !faculty) {
+    if (facultyError || !faculty) {
       return NextResponse.json(
-        { error: 'Faculty does not exist' },
+        { error: 'Invalid faculty selected' },
         { status: 400 }
       )
     }
 
-    // Check if department name already exists in this faculty (unique constraint)
-    const { data: existingDept, error: existErr } = await supabase
+    if (faculty.status !== 'verified') {
+      return NextResponse.json(
+        { error: 'Departments can only be created under verified faculties' },
+        { status: 400 }
+      )
+    }
+
+    // Check for duplicate department name within the same faculty
+    const { data: existingDept, error: duplicateError } = await supabase
       .from('departments')
       .select('id')
-      .eq('faculty_id', facultyId)
-      .eq('name', name.trim())
+      .eq('faculty_id', faculty_id)
+      .ilike('name', name.trim())
       .single()
 
     if (existingDept) {
       return NextResponse.json(
-        { error: 'Department with this name already exists in the selected faculty' },
-        { status: 409 }
+        { error: 'A department with this name already exists in the selected faculty' },
+        { status: 400 }
       )
     }
 
-    // Check if code already exists in this faculty (if provided)
-    if (code && code.trim()) {
-      const { data: existingCode, error: codeErr } = await supabase
+    // Check for duplicate code if provided
+    if (code?.trim()) {
+      const { data: existingCode, error: codeError } = await supabase
         .from('departments')
         .select('id')
-        .eq('faculty_id', facultyId)
-        .eq('code', code.trim().toUpperCase())
+        .ilike('code', code.trim())
         .single()
 
       if (existingCode) {
         return NextResponse.json(
-          { error: 'Department with this code already exists in the selected faculty' },
-          { status: 409 }
+          { error: 'A department with this code already exists' },
+          { status: 400 }
         )
       }
     }
 
     // Insert new department
-    const { data: newDepartment, error: insertErr } = await supabase
+    const { data: department, error } = await supabase
       .from('departments')
       .insert({
         name: name.trim(),
-        code: code ? code.trim().toUpperCase() : null,
-        faculty_id: facultyId
+        code: code?.trim().toUpperCase() || null,
+        faculty_id,
+        status
       })
       .select(`
         id,
         name,
         code,
         faculty_id,
+        status,
         created_at,
         updated_at,
-        faculties (
+        faculties:faculty_id (
           id,
-          name
+          name,
+          status
         )
       `)
       .single()
 
-    if (insertErr) {
-      console.error('Error creating department:', insertErr)
+    if (error) {
+      console.error('Error creating department:', error)
       return NextResponse.json(
         { error: 'Failed to create department' },
         { status: 500 }
@@ -233,9 +329,9 @@ async function handleCreateDepartment(request, supabase) {
     }
 
     return NextResponse.json({
-      message: `Department "${newDepartment.name}" created successfully in ${newDepartment.faculties.name}`,
-      department: newDepartment
-    }, { status: 201 })
+      message: 'Department created successfully',
+      department
+    })
 
   } catch (error) {
     console.error('Error in handleCreateDepartment:', error)
@@ -249,68 +345,94 @@ async function handleCreateDepartment(request, supabase) {
 // PUT: Update existing department
 async function handleUpdateDepartment(request, supabase) {
   try {
-    const { id, name, code, faculty_id } = await request.json()
+    const body = await request.json()
+    const { id, name, code, faculty_id, status } = body
 
     // Validation
-    if (!id || !name || !faculty_id) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Department ID, name, and faculty ID are required' },
+        { error: 'Department ID is required' },
         { status: 400 }
       )
     }
 
-    // Check if department exists
-    const { data: existingDept, error: fetchErr } = await supabase
-      .from('departments')
-      .select('id')
-      .eq('id', id)
-      .single()
-
-    if (fetchErr || !existingDept) {
+    if (!name?.trim()) {
       return NextResponse.json(
-        { error: 'Department not found' },
-        { status: 404 }
+        { error: 'Department name is required' },
+        { status: 400 }
       )
     }
 
-    // Check if faculty exists
-    const { data: faculty, error: facultyErr } = await supabase
+    if (!faculty_id) {
+      return NextResponse.json(
+        { error: 'Faculty selection is required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify faculty exists and is verified
+    const { data: faculty, error: facultyError } = await supabase
       .from('faculties')
-      .select('id, name')
+      .select('id, status')
       .eq('id', faculty_id)
       .single()
 
-    if (facultyErr || !faculty) {
+    if (facultyError || !faculty) {
       return NextResponse.json(
-        { error: 'Faculty not found' },
-        { status: 404 }
+        { error: 'Invalid faculty selected' },
+        { status: 400 }
       )
     }
 
-    // Check if new name conflicts with other departments in the same faculty
-    const { data: nameConflict, error: nameErr } = await supabase
+    if (faculty.status !== 'verified') {
+      return NextResponse.json(
+        { error: 'Departments can only be under verified faculties' },
+        { status: 400 }
+      )
+    }
+
+    // Check for duplicate department name within the same faculty (excluding current)
+    const { data: existingDept, error: duplicateError } = await supabase
       .from('departments')
       .select('id')
-      .eq('name', name)
       .eq('faculty_id', faculty_id)
+      .ilike('name', name.trim())
       .neq('id', id)
       .single()
 
-    if (nameConflict) {
+    if (existingDept) {
       return NextResponse.json(
-        { error: 'Department name already exists in this faculty' },
-        { status: 409 }
+        { error: 'A department with this name already exists in the selected faculty' },
+        { status: 400 }
       )
     }
 
+    // Check for duplicate code if provided (excluding current)
+    if (code?.trim()) {
+      const { data: existingCode, error: codeError } = await supabase
+        .from('departments')
+        .select('id')
+        .ilike('code', code.trim())
+        .neq('id', id)
+        .single()
+
+      if (existingCode) {
+        return NextResponse.json(
+          { error: 'A department with this code already exists' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Update department
-    const { data: updatedDept, error: updateErr } = await supabase
+    const { data: department, error } = await supabase
       .from('departments')
-      .update({ 
-        name, 
-        code: code || null, 
-        faculty_id, 
-        updated_at: new Date() 
+      .update({
+        name: name.trim(),
+        code: code?.trim().toUpperCase() || null,
+        faculty_id,
+        status,
+        updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select(`
@@ -318,17 +440,19 @@ async function handleUpdateDepartment(request, supabase) {
         name,
         code,
         faculty_id,
+        status,
         created_at,
         updated_at,
-        faculties (
+        faculties:faculty_id (
           id,
-          name
+          name,
+          status
         )
       `)
       .single()
 
-    if (updateErr) {
-      console.error('Error updating department:', updateErr)
+    if (error) {
+      console.error('Error updating department:', error)
       return NextResponse.json(
         { error: 'Failed to update department' },
         { status: 500 }
@@ -336,9 +460,9 @@ async function handleUpdateDepartment(request, supabase) {
     }
 
     return NextResponse.json({
-      message: `Department "${updatedDept.name}" updated successfully`,
-      department: updatedDept
-    }, { status: 200 })
+      message: 'Department updated successfully',
+      department
+    })
 
   } catch (error) {
     console.error('Error in handleUpdateDepartment:', error)
@@ -393,8 +517,8 @@ async function handleDeleteDepartment(request, supabase) {
 
     if (students && students.length > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete department that has students. Please reassign or remove students first.' },
-        { status: 409 }
+        { error: 'Cannot delete department. Students are enrolled in this department. Please remove all students first.' },
+        { status: 400 }
       )
     }
 
@@ -413,8 +537,8 @@ async function handleDeleteDepartment(request, supabase) {
     }
 
     return NextResponse.json({
-      message: `Department "${existingDept.name}" deleted successfully`
-    }, { status: 200 })
+      message: 'Department deleted successfully'
+    })
 
   } catch (error) {
     console.error('Error in handleDeleteDepartment:', error)
