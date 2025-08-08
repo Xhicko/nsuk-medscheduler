@@ -48,8 +48,6 @@ async function handleRequest(request, method) {
     switch (method) {
       case 'GET':
         return await handleGetStudents(request, supabase)
-      case 'POST':
-        return await handleCreateStudent(request, supabase)
       case 'PUT':
         return await handleUpdateStudent(request, supabase)
       case 'DELETE':

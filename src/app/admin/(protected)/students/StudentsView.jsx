@@ -87,7 +87,7 @@ export default function StudentsView({
                      <div>
                         <h2 className="text-xl font-semibold text-gray-900">Student Records</h2>
                         <p className="text-sm text-gray-500 mt-1">
-                           Total: {totalStudents} students | Showing: {filteredStudentsCount} students
+                           Total: {totalStudents} students | Showing: {students.length} of {filteredStudentsCount} students
                         </p>
                      </div>
                      

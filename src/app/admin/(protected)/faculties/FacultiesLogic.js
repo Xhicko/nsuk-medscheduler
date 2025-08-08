@@ -30,6 +30,7 @@ export default function FacultiesLogic(){
    
    // Search and filter states
    const [searchTerm, setSearchTerm] = useState("")
+   const [statusFilter, setStatusFilter] = useState("all")
    
    // Pagination states
    const [currentPage, setCurrentPage] = useState(1)
@@ -79,11 +80,14 @@ export default function FacultiesLogic(){
 
    // Client-side filtering and pagination
    const filteredFaculties = faculties.filter(faculty => {
-      if (!searchTerm) return true
-      return (
+      const matchesSearch = !searchTerm || (
          faculty.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
          faculty.code.toLowerCase().includes(searchTerm.toLowerCase())
       )
+      
+      const matchesStatus = statusFilter === "all" || faculty.status === statusFilter
+      
+      return matchesSearch && matchesStatus
    })
 
    const totalPages = Math.ceil(filteredFaculties.length / itemsPerPage)
@@ -93,10 +97,15 @@ export default function FacultiesLogic(){
    // Search debounce timer ref
    const searchTimeoutRef = useRef(null)
 
-   // Handle search changes
+   // Handle search and filter changes
    const handleSearchChange = (value) => {
       setSearchTerm(value)
       setCurrentPage(1) // Reset to first page when search changes
+   }
+
+   const handleStatusFilterChange = (value) => {
+      setStatusFilter(value)
+      setCurrentPage(1) // Reset to first page when filter changes
    }
 
    const handlePageChange = (page) => {
@@ -132,7 +141,8 @@ export default function FacultiesLogic(){
       setEditingFaculty(null)
       setFormData({
          name: '',
-         code: ''
+         code: '',
+         status: 'pending' // Default status for new faculties
       })
       setFocusStates({})
       setErrors({})
@@ -144,7 +154,8 @@ export default function FacultiesLogic(){
       setEditingFaculty(faculty)
       setFormData({
          name: faculty.name,
-         code: faculty.code
+         code: faculty.code,
+         status: faculty.status
       })
       setFocusStates({})
       setErrors({})
@@ -167,6 +178,18 @@ export default function FacultiesLogic(){
       setErrors((prev) => ({ ...prev, [id]: null }))
    }
 
+   const handleSelectChange = (value, field) => {
+      setFormData((prev) => {
+         if (!prev) return null
+         
+         const newData = { ...prev, [field]: value }
+         
+         return newData
+      })
+      // Clear error for the field when changing
+      setErrors((prev) => ({ ...prev, [field]: null }))
+   }
+
    const setFocusState = (field, focused) => {
       setFocusStates((prev) => ({
          ...prev,
@@ -186,6 +209,22 @@ export default function FacultiesLogic(){
          newErrors.code = { message: "Faculty code is required" }
          isValid = false
       }
+      
+      // Additional validation for verified faculties in edit mode
+      if (isEditMode && editingFaculty && editingFaculty.status === 'verified') {
+         // If faculty is currently verified and status is not being changed to pending,
+         // prevent name/code changes
+         if (formData.status === 'verified') {
+            if (formData.name !== editingFaculty.name) {
+               newErrors.name = { message: "Cannot change name of verified faculty. Change status to pending first." }
+               isValid = false
+            }
+            if (formData.code !== editingFaculty.code) {
+               newErrors.code = { message: "Cannot change code of verified faculty. Change status to pending first." }
+               isValid = false
+            }
+         }
+      }
 
       setErrors(newErrors)
       return isValid
@@ -203,6 +242,11 @@ export default function FacultiesLogic(){
          const saveData = {
             name: data.name.trim(),
             code: data.code.trim()
+         }
+
+         // Include status if updating
+         if (isEditMode && data.status) {
+            saveData.status = data.status
          }
 
          let response
@@ -245,6 +289,7 @@ export default function FacultiesLogic(){
 
    // Actions handlers
    const handleEditClick = (faculty) => {
+      // Allow editing of all faculties - status can be changed to pending if needed
       setSelectedFaculty(faculty)
       setIsModalOpen(true)
    }
@@ -255,7 +300,19 @@ export default function FacultiesLogic(){
    }
 
    const handleDeleteClick = (faculty) => {
+      // Only allow deletion of pending faculties
+      if (faculty.status === 'verified') {
+         toast.error("Verified faculties cannot be deleted. Change status to pending first.")
+         return
+      }
       openDeleteModal(faculty)
+   }
+
+   // Status color helper
+   const getStatusColor = (status) => {
+      return status === 'verified'
+         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+         : "bg-amber-50 text-amber-700 border-amber-200"
    }
 
    // Table columns configuration
@@ -280,6 +337,15 @@ export default function FacultiesLogic(){
          ),
       },
       {
+         key: "status",
+         header: "Status",
+         render: (item) => (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+               {item.status === 'verified' ? 'Verified' : 'Pending'}
+            </span>
+         ),
+      },
+      {
          key: "action",
          header: "Action",
          render: (item) => (
@@ -293,8 +359,13 @@ export default function FacultiesLogic(){
                </button>
                <button
                   onClick={() => handleDeleteClick(item)}
-                  className="text-red-600 hover:text-red-800 p-1 cursor-pointer rounded"
-                  title="Delete Faculty"
+                  className={`p-1 rounded cursor-pointer ${
+                     item.status === 'verified' 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-red-600 hover:text-red-800'
+                  }`}
+                  title={item.status === 'verified' ? 'Verified faculties cannot be deleted' : 'Delete Faculty'}
+                  disabled={item.status === 'verified'}
                >
                   <Trash2 className="h-4 w-4" />
                </button>
@@ -320,6 +391,7 @@ export default function FacultiesLogic(){
       
       // Table configuration
       facultiesColumns,
+      getStatusColor,
       
       // Add/Edit sheet data
       isAddEditSheetOpen,
@@ -333,6 +405,8 @@ export default function FacultiesLogic(){
       // Search and filters
       searchTerm,
       setSearchTerm: handleSearchChange,
+      statusFilter,
+      setStatusFilter: handleStatusFilterChange,
       
       // Pagination
       currentPage,
@@ -358,6 +432,7 @@ export default function FacultiesLogic(){
       openEditSheet,
       closeAddEditSheet,
       handleFormChange,
+      handleSelectChange,
       setFocusState,
       validateForm,
       isFieldValid,

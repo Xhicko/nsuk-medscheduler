@@ -29,7 +29,8 @@ export default function FacultiesSkeleton(){
                <Skeleton className="h-6 w-48 bg-[#0077B6]/20" />
             </CardHeader>
             <CardContent>
-               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Skeleton className="h-12 w-full rounded-lg bg-[#0077B6]/10" />
                   <Skeleton className="h-12 w-full rounded-lg bg-[#0077B6]/10" />
                </div>
             </CardContent>
@@ -49,16 +50,16 @@ export default function FacultiesSkeleton(){
             <CardContent>
                <div className="space-y-4">
                   {/* Table Header */}
-                  <div className="grid grid-cols-4 gap-4 p-4 rounded-lg bg-gray-50">
-                     {[...Array(4)].map((_, index) => (
+                  <div className="grid grid-cols-6 gap-4 p-4 rounded-lg bg-gray-50">
+                     {[...Array(6)].map((_, index) => (
                         <Skeleton key={index} className="h-4 bg-[#0077B6]/10" />
                      ))}
                   </div>
                   
                   {/* Table Rows */}
                   {[...Array(8)].map((_, rowIndex) => (
-                     <div key={rowIndex} className="grid grid-cols-4 gap-4 p-4 border-b border-gray-100">
-                        {[...Array(3)].map((_, colIndex) => (
+                     <div key={rowIndex} className="grid grid-cols-6 gap-4 p-4 border-b border-gray-100">
+                        {[...Array(5)].map((_, colIndex) => (
                            <Skeleton key={colIndex} className="h-4 bg-[#0077B6]/5" />
                         ))}
                         <div className="flex gap-2">

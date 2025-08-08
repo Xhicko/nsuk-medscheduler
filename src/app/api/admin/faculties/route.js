@@ -73,7 +73,7 @@ async function handleGetFaculties(request, supabase) {
   try {
     const { data: faculties, error } = await supabase
       .from('faculties')
-      .select('id, name, code, created_at, updated_at')
+      .select('id, name, code, status, created_at, updated_at')
       .order('name')
 
     if (error) {
@@ -174,7 +174,7 @@ async function handleCreateFaculty(request, supabase) {
 // PUT: Update existing faculty
 async function handleUpdateFaculty(request, supabase) {
   try {
-    const { id, name, code } = await request.json()
+    const { id, name, code, status } = await request.json()
 
     // Validation
     if (!id || !name || !code) {
@@ -184,10 +184,11 @@ async function handleUpdateFaculty(request, supabase) {
       )
     }
 
+
     // Check if faculty exists
     const { data: existingFaculty, error: fetchErr } = await supabase
       .from('faculties')
-      .select('id')
+      .select('id, name, code, status')
       .eq('id', id)
       .single()
 
@@ -196,6 +197,21 @@ async function handleUpdateFaculty(request, supabase) {
         { error: 'Faculty not found' },
         { status: 404 }
       )
+    }
+
+    // Business logic for verified faculties
+    if (existingFaculty.status === 'verified') {
+      // For verified faculties, only allow status changes to pending
+      // and prevent name/code changes unless status is being changed to pending
+      if (status !== 'pending') {
+        // If status is not being changed to pending, don't allow name/code changes
+        if (name !== existingFaculty.name || code !== existingFaculty.code) {
+          return NextResponse.json(
+            { error: 'Verified faculties can only have their status changed to pending. Name and code changes require pending status.' },
+            { status: 403 }
+          )
+        }
+      }
     }
 
     // Check if new name conflicts with other faculties
@@ -229,9 +245,20 @@ async function handleUpdateFaculty(request, supabase) {
     }
 
     // Update faculty
+    const updateData = { 
+      name, 
+      code, 
+      updated_at: new Date() 
+    }
+    
+    // Include status in update if provided
+    if (status) {
+      updateData.status = status
+    }
+
     const { data: updatedFaculty, error: updateErr } = await supabase
       .from('faculties')
-      .update({ name, code, updated_at: new Date() })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
@@ -277,7 +304,7 @@ async function handleDeleteFaculty(request, supabase) {
     // Check if faculty exists
     const { data: existingFaculty, error: fetchErr } = await supabase
       .from('faculties')
-      .select('id, name')
+      .select('id, name, status')
       .eq('id', id)
       .single()
 
@@ -285,6 +312,14 @@ async function handleDeleteFaculty(request, supabase) {
       return NextResponse.json(
         { error: 'Faculty not found' },
         { status: 404 }
+      )
+    }
+
+    // Check if faculty is verified (cannot be deleted)
+    if (existingFaculty.status === 'verified') {
+      return NextResponse.json(
+        { error: 'Verified faculties cannot be deleted' },
+        { status: 403 }
       )
     }
 
