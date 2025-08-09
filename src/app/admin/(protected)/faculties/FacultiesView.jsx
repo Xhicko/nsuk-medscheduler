@@ -3,7 +3,7 @@
 import {DataTable} from '@/components/custom/admin/data-table'
 import {ConfirmationDialog} from '@/components/custom/admin/ConfirmationDialog'
 import {FacultyAddEditSheet} from './FacultyAddEditSheet'
-import { GraduationCap, Search, Plus, UserRoundCheck, Filter } from 'lucide-react'
+import { GraduationCap, Search, UserRoundCheck, Filter, Plus} from 'lucide-react'
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"

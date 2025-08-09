@@ -5,10 +5,10 @@ export const ADMIN_ENDPOINTS = {
     LOGIN: `${BASE_URL}/login`,
   },
    DASHBOARD: `${BASE_URL}/dashboard`,
-   UPLOAD_STUDENT_DATA: `${BASE_URL}/upload-student-data`,
    STUDENTS: `${BASE_URL}/students`,
    DEPARTMENTS: `${BASE_URL}/departments`,
    FACULTIES: `${BASE_URL}/faculties`,
+   MEDICAL_FORMS: `${BASE_URL}/medical-forms`,
 }
 
 export default ADMIN_ENDPOINTS

@@ -23,7 +23,6 @@ import { Toaster } from 'react-hot-toast';
          {/* Preload critical routes for admin panel */}
          <link rel="prefetch" href="/admin/dashboard" />
          <link rel="prefetch" href="/admin/students" />
-         <link rel="prefetch" href="/admin/upload-student-data" />
          
          {/* Preconnect to API endpoints */}
          <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />

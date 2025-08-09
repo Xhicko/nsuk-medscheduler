@@ -28,7 +28,6 @@ const NSUKMedSchedulizer = {
 // Pre-define navigation base paths (without isActive) for better performance
 const navigationBasePaths = [
   { title: 'Dashboard', icon: Compass, url: '/admin/dashboard', id:'dashboard' },
-  { title: 'Upload Students Data', icon: UserRoundPlus, url: '/admin/upload-student-data', id:'upload-student-data' },
   { title: 'Students', icon: UserRoundCheck, url: '/admin/students', id:'students' },
   { title: 'Faculties', icon: University, url: '/admin/faculties', id:'faculties' },
   { title: 'Departments', icon: Layers, url: '/admin/departments', id:'departments' },

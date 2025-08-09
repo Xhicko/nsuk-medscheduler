@@ -6,7 +6,6 @@ const ADMIN_PUBLIC_PATHS     = ['/admin/login']
 const ADMIN_PROTECTED_PATHS  = 
 [
    '/admin/dashboard', 
-   '/admin/upload-student-data',
    '/admin/students',
    '/admin/faculties',
    '/admin/departments',

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
 import useDepartmentsStore from '@/store/admin/departmentsStore'
-import { Pencil, Trash2, MoreHorizontal } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 
 export default function StudentsLogic(){
    // Students management states
@@ -15,6 +15,12 @@ export default function StudentsLogic(){
    const [isModalOpen, setIsModalOpen] = useState(false)
    const [deleteLoading, setDeleteLoading] = useState(false)
    const [totalStudentsCount, setTotalStudentsCount] = useState(0)
+   
+   // Define handleReloadData function for reloading student data
+   // This will be passed to StudentUploadModalLogic in the container
+   const handleReloadData = () => {
+      fetchStudents(currentPage, searchTerm, facultyFilter, departmentFilter, statusFilter)
+   }
    
    // Delete confirmation states
    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -54,6 +60,7 @@ export default function StudentsLogic(){
 
    // Fetch students data with pagination
    const fetchStudents = async (page = currentPage, search = searchTerm, faculty = facultyFilter, department = departmentFilter, status = statusFilter) => {
+      
       setLoading(true)
       try {
          // Build query parameters
@@ -348,10 +355,7 @@ export default function StudentsLogic(){
       }
    }
 
-   // Handle reload data - direct call instead of using refreshKey
-   const handleReloadData = () => {
-      fetchStudents(currentPage, searchTerm, facultyFilter, departmentFilter, statusFilter)
-   }
+   // handleReloadData is now defined at the top of the component
 
    // Status color helper
    const getStatusColor = (status) => {
@@ -359,6 +363,8 @@ export default function StudentsLogic(){
          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
          : "bg-amber-50 text-amber-700 border-amber-200"
    }
+   
+   // This function is already defined above - removed duplicate
 
    // Actions handlers
    const handleEditClick = (student) => {
@@ -510,6 +516,8 @@ export default function StudentsLogic(){
       fetchStudents,
       handleEditClick,
       handleConfirmEdit,
-      handleDeleteClick
+      handleDeleteClick,
+      
+      // No upload modal logic here - it's passed directly to the view
    }
 }

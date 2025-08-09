@@ -1,12 +1,13 @@
 'use client'
 
-import PageHeader from '@/components/custom/admin/PageHeader'
 import {DataTable} from '@/components/custom/admin/data-table'
 import {ConfirmationDialog} from '@/components/custom/admin/ConfirmationDialog'
 import {StudentEditSheet} from './StudentEditSheet'
-import { UserRoundCheck, Search, Filter } from 'lucide-react'
+import {StudentUploadModal} from './StudentUploadModal'
+import { UserRoundCheck, Search, Filter, Plus, RefreshCcw } from 'lucide-react'
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {Button}  from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function StudentsView({
@@ -67,17 +68,42 @@ export default function StudentsView({
    handleSaveStudent,
    handleEditSubmit,
    handleConfirmEdit,
-   handleReloadData
+   handleReloadData,
+   
+   // Student upload modal logic - now received directly
+   uploadModalLogic
 }) {
    return (
       <div className="min-h-[calc(100vh-49px)] bg-gradient-to-br from-gray-50 via-white to-gray-50">
          <div className="w-full mx-auto mb-8">
-            <PageHeader
-               icon={<UserRoundCheck className="w-8 h-8" />}
-               title="Manage Students Data"
-               description="Manage student records for the NSUK Medical Schedulizer Database."
-               onReloadData={handleReloadData}
-            />
+            <div className="p-8 bg-[#0077B6] border-0 shadow-lg rounded-2xl">
+               <div className="flex items-center gap-4 mb-4">
+                  <div className="p-2 bg-white rounded-xl">
+                     <UserRoundCheck className="w-8 h-8 text-[#0077B6]" />
+                  </div>
+                  <div className="flex-1">
+                     <h1 className="text-2xl font-bold text-white">Manage Students Data</h1>
+                     <p className="text-white/90">Manage student records for the NSUK Medical Schedulizer Database.</p>
+                  </div>
+               </div>
+               <div className="flex gap-3">
+                  <Button
+                     onClick={uploadModalLogic.openUploadModal}
+                     className="bg-[#fff] hover:bg-[#fff]/95 text-[#0077B6] cursor-pointer"
+                  >
+                     <Plus className="w-4 h-4 mr-2 text-[#0077B6]" />
+                     Add Students
+                  </Button>
+                  <Button
+                     variant="outline"
+                     onClick={handleReloadData}
+                     className="text-[#0077B6] border-none hover:bg-[#fff]/95 hover:text-[#0077B6] cursor-pointer"
+                  >
+                     <RefreshCcw className="w-4 h-4 mr-2 text-[#0077B6]" />
+                     Reload
+                  </Button>
+               </div>
+            </div>
          </div>
 
          <div className="w-full mx-auto px-6">
@@ -210,6 +236,45 @@ export default function StudentsView({
             isFieldValid={isEditFieldValid}
             onSave={handleSaveStudent}
             onSubmit={handleEditSubmit}
+         />
+         
+         {/* Student Upload Modal */}
+         <StudentUploadModal
+            isOpen={uploadModalLogic.isUploadModalOpen}
+            onOpenChange={uploadModalLogic.closeUploadModal}
+            
+            // Manual entry props
+            students={uploadModalLogic.uploadStudents}
+            handleAddStudent={uploadModalLogic.handleAddStudent}
+            handleRemoveStudent={uploadModalLogic.handleRemoveStudent}
+            register={uploadModalLogic.register}
+            handleSubmit={uploadModalLogic.handleSubmit}
+            onSubmit={uploadModalLogic.onSubmit}
+            errors={uploadModalLogic.errors}
+            isMatricNumberFocused={uploadModalLogic.isMatricNumberFocused}
+            isFullNameFocused={uploadModalLogic.isFullNameFocused}
+            isInstituteEmailFocused={uploadModalLogic.isInstituteEmailFocused}
+            getWatchedValue={uploadModalLogic.getWatchedValue}
+            isFieldValid={uploadModalLogic.isFieldValid}
+            setValue={uploadModalLogic.setValue}
+            buttonLoading={uploadModalLogic.buttonLoading}
+            handleFacultyChange={uploadModalLogic.handleFacultyChange}
+            handleDepartmentChange={uploadModalLogic.handleDepartmentChange}
+            faculties={uploadModalLogic.faculties} 
+            getDepartments={uploadModalLogic.getDepartments}
+            loadingFaculties={uploadModalLogic.loadingFaculties}
+            loadingDepartments={uploadModalLogic.loadingDepartments} 
+            areAllFormsValid={uploadModalLogic.areAllFormsValid}
+            handleFocusChange={uploadModalLogic.handleFocusChange}
+            
+            // Bulk upload props
+            selectedFile={uploadModalLogic.selectedFile}
+            filePreview={uploadModalLogic.filePreview}
+            bulkUploadLoading={uploadModalLogic.bulkUploadLoading}
+            handleBulkFileChange={uploadModalLogic.handleBulkFileChange}
+            handleBulkDrop={uploadModalLogic.handleBulkDrop}
+            handleBulkDragOver={uploadModalLogic.handleBulkDragOver}
+            handleBulkUpload={uploadModalLogic.handleBulkUpload}
          />
       </div>
    )
