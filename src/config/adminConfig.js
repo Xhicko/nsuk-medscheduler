@@ -9,6 +9,7 @@ export const ADMIN_ENDPOINTS = {
    DEPARTMENTS: `${BASE_URL}/departments`,
    FACULTIES: `${BASE_URL}/faculties`,
    MEDICAL_FORMS: `${BASE_URL}/medical_forms`,
+  APPOINTMENTS: `${BASE_URL}/appointment`,
 }
 
 export default ADMIN_ENDPOINTS
