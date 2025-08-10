@@ -71,11 +71,61 @@ async function handleRequest(request, method) {
 // GET: Fetch all faculties
 async function handleGetFaculties(request, supabase) {
   try {
-    const { data: faculties, error } = await supabase
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page')) || 1
+    const limit = parseInt(searchParams.get('limit')) || 0 // 0 means no pagination
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || 'all'
+
+    const isPaginated = limit > 0
+
+    let baseQuery = supabase
       .from('faculties')
       .select('id, name, code, status, created_at, updated_at')
-      .order('name')
 
+    if (search.trim()) {
+      const term = search.trim()
+      baseQuery = baseQuery.or(`name.ilike.*${term}*,code.ilike.*${term}*`)
+    }
+    if (status !== 'all') {
+      baseQuery = baseQuery.eq('status', status)
+    }
+
+    if (!isPaginated) {
+      const { data: faculties, error } = await baseQuery.order('name')
+      if (error) {
+        console.error('Error fetching faculties:', error)
+        return NextResponse.json(
+          { error: 'Failed to fetch faculties' },
+          { status: 500 }
+        )
+      }
+      return NextResponse.json(
+        { faculties },
+        { status: 200 }
+      )
+    }
+
+    // Count query
+    let countQuery = supabase
+      .from('faculties')
+      .select('id', { count: 'exact', head: true })
+    if (search.trim()) {
+      const term = search.trim()
+      countQuery = countQuery.or(`name.ilike.*${term}*,code.ilike.*${term}*`)
+    }
+    if (status !== 'all') {
+      countQuery = countQuery.eq('status', status)
+    }
+    const { count, error: countError } = await countQuery
+    if (countError) {
+      console.error('Error getting faculties count:', countError)
+    }
+
+    const offset = (page - 1) * limit
+    const { data: faculties, error } = await baseQuery
+      .order('name')
+      .range(offset, offset + limit - 1)
     if (error) {
       console.error('Error fetching faculties:', error)
       return NextResponse.json(
@@ -84,8 +134,10 @@ async function handleGetFaculties(request, supabase) {
       )
     }
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
     return NextResponse.json(
-      { faculties },
+      { faculties, pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPrevPage: page > 1 } },
       { status: 200 }
     )
 

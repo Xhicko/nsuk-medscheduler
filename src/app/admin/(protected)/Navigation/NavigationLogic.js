@@ -3,7 +3,6 @@ import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 import {
    Compass,
-   UserRoundPlus,
    ClipboardPlus, 
    UserRoundCheck,
    University,
@@ -31,7 +30,7 @@ const navigationBasePaths = [
   { title: 'Students', icon: UserRoundCheck, url: '/admin/students', id:'students' },
   { title: 'Faculties', icon: University, url: '/admin/faculties', id:'faculties' },
   { title: 'Departments', icon: Layers, url: '/admin/departments', id:'departments' },
-  { title: 'Medical Forms', icon: ClipboardPlus, url: '/admin/medical-forms', id:'medical-forms' },
+  { title: 'Medical Forms', icon: ClipboardPlus, url: '/admin/medical_forms', id:'medical_forms' },
   { title: 'Appointments', icon: CalendarSync, url: '/admin/appointments', id:'appointments' },
   { title: 'Students Results', icon: BellRing, url: '/admin/students-results', id:'students-results' },
   { title: 'Admin Management', icon: ShieldEllipsis, url: '/admin/admin-management', id:'admin-management' },

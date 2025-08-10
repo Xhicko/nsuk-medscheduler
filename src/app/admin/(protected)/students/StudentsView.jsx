@@ -83,7 +83,7 @@ export default function StudentsView({
                   </div>
                   <div className="flex-1">
                      <h1 className="text-2xl font-bold text-white">Manage Students Data</h1>
-                     <p className="text-white/90">Manage student records for the NSUK Medical Schedulizer Database.</p>
+                     <p className="text-white/90">Manage student records.</p>
                   </div>
                </div>
                <div className="flex gap-3">

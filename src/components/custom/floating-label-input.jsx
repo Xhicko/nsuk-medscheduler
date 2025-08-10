@@ -47,6 +47,8 @@ export const FloatingLabelInput = ({
     }
   }
   
+  const isDisabled = !!props?.disabled
+
   return (
     <div className="relative mb-6">
       {icon && (
@@ -68,14 +70,15 @@ export const FloatingLabelInput = ({
           setIsFocused?.(false);
           register?.onBlur?.(e);
         }}
-        className={`!h-14 ${icon ? "!pl-11" : "!pl-3"} !pr-3 !pt-4 !rounded !focus:ring-0 !focus:outline-none !focus:ring-offset-0 !bg-white
+        className={`!h-14 ${icon ? "!pl-11" : "!pl-3"} !pr-3 !pt-4 !rounded !focus:ring-0 !focus:outline-none !focus:ring-offset-0 bg-white
           ${
             errors
               ? "!border-red-500 !focus:border-red-500"
               : isValid
                 ? "!border-[#0077B6] !focus:border-[#0077B6]"
                 : "!border-[#000000] !focus:border-[#000000]"
-          }`}
+          }
+          ${isDisabled ? "opacity-60 cursor-not-allowed hover:bg-gray-50 disabled:hover:bg-gray-50" : ""}`}
         {...(register ? register : {})}
         {...props}
       />
@@ -91,7 +94,7 @@ export const FloatingLabelInput = ({
             ? "text-red-500" 
             : isValid 
             ? "text-[#0077B6]" 
-            : "text-[#000000]"
+            : isDisabled ? "text-gray-400" : "text-[#000000]"
          }`}
       >
         {label}

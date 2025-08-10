@@ -85,8 +85,8 @@ async function handleGetDepartments(request, supabase) {
       // New paginated logic for admin dashboard
       const offset = (page - 1) * limit
 
-      // Build query for paginated results
-      let query = supabase
+  // Build query for paginated results
+  let query = supabase
         .from('departments')
         .select(`
           id,
@@ -105,7 +105,8 @@ async function handleGetDepartments(request, supabase) {
 
       // Apply search filter
       if (search.trim()) {
-        query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`)
+        const term = search.trim()
+        query = query.or(`name.ilike.*${term}*,code.ilike.*${term}*`)
       }
 
       // Apply status filter
@@ -118,18 +119,26 @@ async function handleGetDepartments(request, supabase) {
         query = query.eq('faculty_id', faculty_id)
       }
 
-      // Get total count for pagination
-      const { data: countData, error: countError } = await query
+      // Get total count for pagination using a dedicated count query
+      let countQuery = supabase
+        .from('departments')
+        .select('id', { count: 'exact', head: true })
 
-      if (countError) {
-        console.error('Error getting departments count:', countError)
-        return NextResponse.json(
-          { error: 'Failed to get departments count' },
-          { status: 500 }
-        )
+      if (search.trim()) {
+        const term = search.trim()
+        countQuery = countQuery.or(`name.ilike.*${term}*,code.ilike.*${term}*`)
+      }
+      if (status !== 'all') {
+        countQuery = countQuery.eq('status', status)
+      }
+      if (faculty_id !== 'all') {
+        countQuery = countQuery.eq('faculty_id', faculty_id)
       }
 
-      const totalCount = countData?.length || 0
+      const { count: totalCount, error: countError } = await countQuery
+      if (countError) {
+        console.error('Error getting departments count:', countError)
+      }
 
       // Get paginated data
       const { data: departments, error } = await query

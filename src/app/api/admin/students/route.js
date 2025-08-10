@@ -87,8 +87,8 @@ async function handleGetStudents(request, supabase) {
     const genderFilter = searchParams.get('gender')
     const religionFilter = searchParams.get('religion')
 
-    // Build the base query with joins - only select necessary fields
-    let query = supabase
+  // Build the base query with joins - only select necessary fields
+  let query = supabase
       .from('students')
       .select(`
         id,
@@ -112,37 +112,59 @@ async function handleGetStudents(request, supabase) {
 
     // Apply search filter (search in name, matric number, or email)
     if (search) {
-      query = query.or(`full_name.ilike.%${search}%,matric_number.ilike.%${search}%,institutional_email.ilike.%${search}%`)
+      const term = String(search).trim()
+      if (term) {
+        query = query.or(`full_name.ilike.*${term}*,matric_number.ilike.*${term}*,institutional_email.ilike.*${term}*`)
+      }
     }
 
     // Apply filters
-    if (facultyFilter) {
+    if (facultyFilter && facultyFilter !== 'all') {
       query = query.eq('faculty_id', facultyFilter)
     }
-    if (departmentFilter) {
+    if (departmentFilter && departmentFilter !== 'all') {
       query = query.eq('department_id', departmentFilter)
     }
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== 'all') {
       query = query.eq('signup_status', statusFilter)
     }
-    if (genderFilter) {
+    if (genderFilter && genderFilter !== 'all') {
       query = query.eq('gender', genderFilter)
     }
-    if (religionFilter) {
+    if (religionFilter && religionFilter !== 'all') {
       query = query.eq('religion', religionFilter)
     }
 
-    // Get total count for pagination (without limit/offset)
-    const { count, error: countError } = await supabase
+    // Build a dedicated count query mirroring the filters/search
+    let countQuery = supabase
       .from('students')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
 
+    if (facultyFilter && facultyFilter !== 'all') {
+      countQuery = countQuery.eq('faculty_id', facultyFilter)
+    }
+    if (departmentFilter && departmentFilter !== 'all') {
+      countQuery = countQuery.eq('department_id', departmentFilter)
+    }
+    if (statusFilter && statusFilter !== 'all') {
+      countQuery = countQuery.eq('signup_status', statusFilter)
+    }
+    if (genderFilter && genderFilter !== 'all') {
+      countQuery = countQuery.eq('gender', genderFilter)
+    }
+    if (religionFilter && religionFilter !== 'all') {
+      countQuery = countQuery.eq('religion', religionFilter)
+    }
+    if (search) {
+      const term = String(search).trim()
+      if (term) {
+        countQuery = countQuery.or(`full_name.ilike.*${term}*,matric_number.ilike.*${term}*,institutional_email.ilike.*${term}*`)
+      }
+    }
+
+    const { count, error: countError } = await countQuery
     if (countError) {
       console.error('Error getting students count:', countError)
-      return NextResponse.json(
-        { error: 'Failed to get students count' },
-        { status: 500 }
-      )
     }
 
     // Apply pagination and ordering
@@ -160,8 +182,9 @@ async function handleGetStudents(request, supabase) {
       )
     }
 
-    // Calculate pagination metadata
-    const totalPages = Math.ceil(count / limit)
+  // Calculate pagination metadata
+  const total = count || 0
+  const totalPages = Math.ceil(total / limit)
     const hasNextPage = page < totalPages
     const hasPrevPage = page > 1
 
@@ -170,7 +193,7 @@ async function handleGetStudents(request, supabase) {
       pagination: {
         page,
         limit,
-        total: count,
+        total: total,
         totalPages,
         hasNextPage,
         hasPrevPage
