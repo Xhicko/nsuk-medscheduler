@@ -1,8 +1,6 @@
 import { Body, Container, Head, Heading, Hr, Html, Preview, Section, Text } from "@react-email/components"
 
-
-
-export default function AppointmentEmail({
+export default function AppointmentRescheduledEmail({
   systemName,
   studentName,
   matricNumber,
@@ -17,7 +15,7 @@ export default function AppointmentEmail({
   return (
     <Html>
       <Head />
-      <Preview>{`${safeSystemName}: Appointment confirmed for ${safeStudentName}`}</Preview>
+      <Preview>{`${safeSystemName}: Appointment rescheduled for ${safeStudentName}`}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.header}>
@@ -28,27 +26,17 @@ export default function AppointmentEmail({
 
           <Section>
             <Heading as="h3" style={styles.title}>
-              Appointment Confirmation
+              Appointment Rescheduled
             </Heading>
             <Text style={styles.paragraph}>
               Dear {safeStudentName} ({safeMatricNumber}),
             </Text>
             <Text style={styles.paragraph}>
-              Your medical appointment has been scheduled. Please find the details below.
+              Your medical appointment has been rescheduled. Please find the new details below.
             </Text>
           </Section>
 
           <Section style={styles.card}>
-            <Text style={styles.label}>Student</Text>
-            <Text style={styles.value}>{safeStudentName}</Text>
-
-            <Hr style={styles.hr} />
-
-            <Text style={styles.label}>Matric Number</Text>
-            <Text style={styles.value}>{safeMatricNumber}</Text>
-
-            <Hr style={styles.hr} />
-
             <Text style={styles.label}>Appointment Window</Text>
             <Text style={styles.value}>
               Start: {safeStart}
@@ -59,7 +47,7 @@ export default function AppointmentEmail({
 
           <Section>
             <Text style={styles.note}>
-              Please arrive 10 minutes early with your student ID. If you need to reschedule, reply to this email.
+              Please arrive 10 minutes early with your student ID. If you need to adjust the time, reply to this email.
             </Text>
           </Section>
 
@@ -130,11 +118,6 @@ const styles = {
     margin: "0 0 8px 0",
     fontSize: "14px",
     color: "#000000",
-  },
-  hr: {
-    border: "none",
-    borderTop: "1px solid #000000",
-    margin: "12px 0",
   },
   hrLight: {
     border: "none",

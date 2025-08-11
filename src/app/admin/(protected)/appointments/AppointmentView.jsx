@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DataTable } from '@/components/custom/admin/data-table'
 import { ConfirmationDialog } from '@/components/custom/admin/ConfirmationDialog'
 import { ScheduleAppointmentModal } from './ScheduleAppointmentModal'
+import AppointmentEditSheet from './AppointmentEditSheet'
 
 
 export default function AppointmentView({
@@ -33,6 +34,8 @@ export default function AppointmentView({
    tableData = [],
       facultiesData = [],
       getDepartments = () => [],
+      scheduledStatusFilter = 'scheduled',
+      setScheduledStatusFilter = () => {},
    // schedule flow
    isScheduleConfirmOpen = false,
    closeScheduleConfirm = () => {},
@@ -46,6 +49,31 @@ export default function AppointmentView({
    closeDeleteConfirm = () => {},
    handleConfirmDelete = () => {},
    isDeleting = false,
+   // undo flow
+   isUndoConfirmOpen = false,
+   closeUndoConfirm = () => {},
+   handleConfirmUndo = () => {},
+   isUndoing = false,
+   // complete flow
+   isCompleteConfirmOpen = false,
+   closeCompleteConfirm = () => {},
+   handleConfirmComplete = () => {},
+   isCompleting = false,
+   // edit sheet
+   isEditSheetOpen = false,
+   handleEditSheetOpenChange = () => {},
+   selectedStudentForEdit = null,
+   initialRangeForEdit = null,
+   requestReschedule = () => {},
+   isEditConfirmOpen = false,
+   closeEditConfirm = () => {},
+   handleConfirmEditOpen = () => {},
+   isRescheduleConfirmOpen = false,
+   closeRescheduleConfirm = () => {},
+   handleConfirmReschedule = () => {},
+   handleMarkMissed = () => {},
+   handleRevertPendingFromSheet = () => {},
+   loadingAction = null,
 }) {
    const handleReload = () => {
       fetchAppointments(status)
@@ -142,6 +170,21 @@ export default function AppointmentView({
                                     className="pl-10 w-64 rounded-xl bg-white border-gray-200 text-gray-700"
                                  />
                               </div>
+                                           {status === 'scheduled' && (
+                                              <Select value={scheduledStatusFilter} onValueChange={setScheduledStatusFilter}>
+                                                 <SelectTrigger className="w-48 rounded-xl bg-white border-gray-200">
+                                                    <div className="flex items-center gap-2">
+                                                       <Filter className="h-4 w-4" />
+                                                       <SelectValue placeholder="Appointment status" />
+                                                    </div>
+                                                 </SelectTrigger>
+                                                 <SelectContent>
+                                                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                                                    <SelectItem value="completed">Completed</SelectItem>
+                                                    <SelectItem value="missed">Missed</SelectItem>
+                                                 </SelectContent>
+                                              </Select>
+                                           )}
                               <Select value={facultyFilter} onValueChange={setFacultyFilter}>
                                  <SelectTrigger className="w-56 rounded-xl bg-white border-gray-200">
                                     <div className="flex items-center gap-2">
@@ -213,6 +256,18 @@ export default function AppointmentView({
                   onCancel={() => handleScheduleModalOpenChange(false)}
                />
 
+               {/* Edit appointment sheet */}
+               <AppointmentEditSheet
+                  isOpen={isEditSheetOpen}
+                  onOpenChange={handleEditSheetOpenChange}
+                  student={selectedStudentForEdit}
+                  initialRange={initialRangeForEdit}
+                  onReschedule={requestReschedule}
+                  onMarkMissed={handleMarkMissed}
+                  onRevertPending={handleRevertPendingFromSheet}
+                  loadingAction={loadingAction}
+               />
+
                {/* Delete confirmation dialog */}
                <ConfirmationDialog
                   isOpen={isDeleteConfirmOpen}
@@ -223,6 +278,53 @@ export default function AppointmentView({
                   confirmText={isDeleting ? 'Deleting…' : 'Delete'}
                   cancelText="Cancel"
                   isLoading={isDeleting}
+               />
+
+               {/* Undo confirmation dialog */}
+               <ConfirmationDialog
+                  isOpen={isUndoConfirmOpen}
+                  onOpenChange={closeUndoConfirm}
+                  title="Undo scheduled appointment?"
+                  description={selectedStudentForModal ? `This will revert the appointment for ${selectedStudentForModal.fullName} (${selectedStudentForModal.matricNumber}) back to pending.` : 'This will revert the appointment back to pending.'}
+                  onConfirm={handleConfirmUndo}
+                  confirmText={isUndoing ? 'Undoing…' : 'Undo'}
+                  cancelText="Cancel"
+                  isLoading={isUndoing}
+               />
+
+               {/* Confirm opening the edit sheet */}
+               <ConfirmationDialog
+                  isOpen={isEditConfirmOpen}
+                  onOpenChange={closeEditConfirm}
+                  title="Update student appointment?"
+                  description={selectedStudentForEdit ? `You’re about to open the editor to update ${selectedStudentForEdit.fullName} (${selectedStudentForEdit.matricNumber}).` : 'Open the editor to update this appointment.'}
+                  onConfirm={handleConfirmEditOpen}
+                  confirmText="Open editor"
+                  cancelText="Cancel"
+               />
+
+               {/* Reschedule confirmation */}
+               <ConfirmationDialog
+                  isOpen={isRescheduleConfirmOpen}
+                  onOpenChange={closeRescheduleConfirm}
+                  title="Confirm reschedule?"
+                  description={selectedStudentForEdit ? `Reschedule appointment for ${selectedStudentForEdit.fullName} (${selectedStudentForEdit.matricNumber}). The student will be notified by email.` : 'The student will be notified by email.'}
+                  onConfirm={handleConfirmReschedule}
+                  confirmText={loadingAction === 'reschedule' ? 'Rescheduling…' : 'Yes, reschedule'}
+                  cancelText="Cancel"
+                  isLoading={loadingAction === 'reschedule'}
+               />
+
+               {/* Complete confirmation dialog */}
+               <ConfirmationDialog
+                  isOpen={isCompleteConfirmOpen}
+                  onOpenChange={closeCompleteConfirm}
+                  title="Mark appointment as completed?"
+                  description={selectedStudentForModal ? `This will mark the appointment for ${selectedStudentForModal.fullName} (${selectedStudentForModal.matricNumber}) as completed.` : 'This will mark the appointment as completed.'}
+                  onConfirm={handleConfirmComplete}
+                  confirmText={isCompleting ? 'Completing…' : 'Complete'}
+                  cancelText="Cancel"
+                  isLoading={isCompleting}
                />
 
     </div>

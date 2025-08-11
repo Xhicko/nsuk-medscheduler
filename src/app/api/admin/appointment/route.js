@@ -1,6 +1,7 @@
 'use server'
 
 import { NextResponse } from 'next/server'
+import { sendScheduleAppointment, sendAppointmentReverted, sendAppointmentMissed, sendAppointmentRescheduled } from '@/lib/email'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
@@ -40,10 +41,9 @@ async function handleRequest(request, method) {
       case 'GET':
         return await handleGetAppointments(request, supabase)
       case 'POST':
-        // Default create stub
-        return NextResponse.json({ message: 'Appointment created successfully' }, { status: 201 })
+      return await handleCompleteAppointment(request, supabase)
       case 'PUT':
-  return await handleUpdateAppointment(request, supabase)
+    return await handleUpdateAppointment(request, supabase)
       case 'DELETE':
   return await handleDeleteAppointment(request, supabase)
       default:
@@ -259,22 +259,47 @@ async function handleDeleteAppointment(request, supabase) {
   }
 }
 
-// PUT: Update an appointment (schedule/edit time_range & status)
+// PUT: Update an appointment (schedule/edit time_range & status pending|scheduled|missed)
 async function handleUpdateAppointment(request, supabase) {
   try {
     const body = await request.json()
     const appointmentId = body?.appointment_id || body?.appointmentId || body?.id
-    const timeRange = body?.time_range || body?.timeRange
+    const timeRange = body?.time_range ?? body?.timeRange ?? null
     const status = body?.status || 'scheduled'
 
-    if (!appointmentId || !timeRange) {
-      return NextResponse.json({ error: 'appointment_id and time_range are required' }, { status: 400 })
+    if (!appointmentId) {
+      return NextResponse.json({ error: 'appointment_id is required' }, { status: 400 })
     }
 
+  const allowedStatuses = ['pending', 'scheduled', 'missed']
+    if (!allowedStatuses.includes(status)) {
+      if (status === 'completed') {
+        return NextResponse.json({ error: 'Use POST to complete an appointment' }, { status: 405 })
+      }
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+
+    // Fetch existing to preserve fields when needed (e.g., completed without providing time_range)
+    const { data: existing, error: existingErr } = await supabase
+      .from('appointments')
+      .select('id, status, time_range')
+      .eq('id', appointmentId)
+      .single()
+    if (existingErr) {
+      return NextResponse.json({ error: 'Failed to load appointment' }, { status: 500 })
+    }
+    if (!existing) {
+      return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+    }
+
+    const nowISO = new Date().toISOString()
+
     const updatePayload = {
-      time_range: timeRange,
+      // If undoing to pending, clear time_range; if marking missed, keep existing time_range unless a new one is provided
+      time_range: status === 'pending' ? null : (status === 'missed' ? (timeRange ?? existing.time_range) : timeRange),
       status,
-      updated_at: new Date().toISOString(),
+      updated_at: nowISO,
+      completed_at: null,
     }
 
     const { data, error } = await supabase
@@ -293,6 +318,7 @@ async function handleUpdateAppointment(request, supabase) {
           id,
           matric_number,
           full_name,
+          institutional_email,
           faculties ( id, name ),
           departments ( id, name )
         )
@@ -309,9 +335,282 @@ async function handleUpdateAppointment(request, supabase) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
     }
 
+  // Fire-and-forget email notification only when scheduling
+    if (updatePayload.status === 'scheduled' && updatePayload.time_range) {
+      try {
+        const student = data?.students
+        const to = student?.institutional_email
+        const systemName = process.env.NEXT_PUBLIC_SYSTEM_NAME || process.env.SYSTEM_NAME || 'NSUK Medical Scheduler'
+
+        // time_range is a tsrange string: [start,end)
+        let startISO = null
+        let endISO = null
+        const rawRange = data?.time_range
+        if (typeof rawRange === 'string') {
+          const parts = rawRange.replace(/^[\[(]/, '').replace(/[\])]/, '').split(',')
+          if (parts.length === 2) {
+            startISO = parts[0]?.replace(/\"/g, '').trim()
+            endISO = parts[1]?.replace(/\"/g, '').trim()
+          }
+        } else if (rawRange && typeof rawRange === 'object' && rawRange.lower && rawRange.upper) {
+          startISO = rawRange.lower
+          endISO = rawRange.upper
+        }
+
+        const startDate = startISO ? new Date(startISO) : null
+        const endDate = endISO ? new Date(endISO) : null
+        const startStr = startDate ? `${startDate.toLocaleDateString('en-US', { weekday: 'long' })}, ${startDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })} ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+        const endStr = endDate ? `${endDate.toLocaleDateString('en-US', { weekday: 'long' })}, ${endDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })} ${endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+
+        if (to && startStr && endStr) {
+          await sendScheduleAppointment({
+            to,
+            systemName,
+            studentName: student?.full_name,
+            matricNumber: student?.matric_number,
+            start: startStr,
+            end: endStr,
+          })
+        }
+      } catch (notifyError) {
+        console.error('Failed to send schedule email:', notifyError)
+      }
+    }
+
+  // If we reverted to pending, notify the student that the appointment was undone
+    if (updatePayload.status === 'pending') {
+      try {
+        const student = data?.students
+        const to = student?.institutional_email
+        const systemName = process.env.NEXT_PUBLIC_SYSTEM_NAME || process.env.SYSTEM_NAME || 'NSUK Medical Scheduler'
+        if (to) {
+          await sendAppointmentReverted({
+            to,
+            systemName,
+            studentName: student?.full_name,
+            matricNumber: student?.matric_number,
+            note: 'Your appointment has been reverted to pending. You will receive a new schedule soon.',
+          })
+        }
+      } catch (notifyError) {
+        console.error('Failed to send appointment reverted email:', notifyError)
+      }
+    }
+
+  // If marked as missed, notify the student
+    if (updatePayload.status === 'missed') {
+      try {
+        const student = data?.students
+        const to = student?.institutional_email
+        const systemName = process.env.NEXT_PUBLIC_SYSTEM_NAME || process.env.SYSTEM_NAME || 'NSUK Medical Scheduler'
+
+        // Extract start/end from possibly string or object tsrange
+        let startISO = null
+        let endISO = null
+        const rawRange = data?.time_range || existing?.time_range
+        if (typeof rawRange === 'string') {
+          const parts = rawRange.replace(/^[\[(]/, '').replace(/[\])]/, '').split(',')
+          if (parts.length === 2) {
+            startISO = parts[0]?.replace(/\"/g, '').trim()
+            endISO = parts[1]?.replace(/\"/g, '').trim()
+          }
+        } else if (rawRange && typeof rawRange === 'object' && rawRange.lower && rawRange.upper) {
+          startISO = rawRange.lower
+          endISO = rawRange.upper
+        }
+
+        const startDate = startISO ? new Date(startISO) : null
+        const endDate = endISO ? new Date(endISO) : null
+        const startStr = startDate ? `${startDate.toLocaleDateString('en-US', { weekday: 'long' })}, ${startDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })} ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+        const endStr = endDate ? `${endDate.toLocaleDateString('en-US', { weekday: 'long' })}, ${endDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })} ${endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+
+        if (to) {
+          await sendAppointmentMissed({
+            to,
+            systemName,
+            studentName: student?.full_name,
+            matricNumber: student?.matric_number,
+            start: startStr,
+            end: endStr,
+            note: 'Our records show you missed your scheduled medical appointment.',
+          })
+        }
+      } catch (notifyError) {
+        console.error('Failed to send appointment missed email:', notifyError)
+      }
+    }
+
+    // If we are still scheduled and updated time_range (reschedule), notify student with new time
+    if (updatePayload.status === 'scheduled' && updatePayload.time_range) {
+      try {
+        const student = data?.students
+        const to = student?.institutional_email
+        const systemName = process.env.NEXT_PUBLIC_SYSTEM_NAME || process.env.SYSTEM_NAME || 'NSUK Medical Scheduler'
+
+        let startISO = null
+        let endISO = null
+        const rawRange = data?.time_range
+        if (typeof rawRange === 'string') {
+          const parts = rawRange.replace(/^[\[(]/, '').replace(/[\])]/, '').split(',')
+          if (parts.length === 2) {
+            startISO = parts[0]?.replace(/\"/g, '').trim()
+            endISO = parts[1]?.replace(/\"/g, '').trim()
+          }
+        } else if (rawRange && typeof rawRange === 'object' && rawRange.lower && rawRange.upper) {
+          startISO = rawRange.lower
+          endISO = rawRange.upper
+        }
+
+        const startDate = startISO ? new Date(startISO) : null
+        const endDate = endISO ? new Date(endISO) : null
+        const startStr = startDate ? `${startDate.toLocaleDateString('en-US', { weekday: 'long' })}, ${startDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })} ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+        const endStr = endDate ? `${endDate.toLocaleDateString('en-US', { weekday: 'long' })}, ${endDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })} ${endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+
+        if (to && startStr && endStr) {
+          await sendAppointmentRescheduled({
+            to,
+            systemName,
+            studentName: student?.full_name,
+            matricNumber: student?.matric_number,
+            start: startStr,
+            end: endStr,
+          })
+        }
+      } catch (notifyError) {
+        console.error('Failed to send appointment rescheduled email:', notifyError)
+      }
+    }
+
+    // If we reverted to pending, notify the student that the appointment was undone
+    if (updatePayload.status === 'pending') {
+      try {
+        const student = data?.students
+        const to = student?.institutional_email
+        const systemName = process.env.NEXT_PUBLIC_SYSTEM_NAME || process.env.SYSTEM_NAME || 'NSUK Medical Scheduler'
+        if (to) {
+          await sendAppointmentReverted({
+            to,
+            systemName,
+            studentName: student?.full_name,
+            matricNumber: student?.matric_number,
+            note: 'Your appointment has been reverted to pending. You will receive a new schedule soon.',
+          })
+        }
+      } catch (notifyError) {
+        console.error('Failed to send appointment reverted email:', notifyError)
+      }
+    }
+
     return NextResponse.json({ appointment: data, message: 'Appointment updated successfully' }, { status: 200 })
   } catch (error) {
     console.error('Error in handleUpdateAppointment:', error)
     return NextResponse.json({ error: 'Failed to update appointment' }, { status: 500 })
+  }
+}
+
+// POST: Complete an appointment -> create result_notifications row and mark appointment completed
+async function handleCompleteAppointment(request, supabase) {
+  try {
+    const body = await request.json()
+    const appointmentId = body?.appointment_id || body?.appointmentId || body?.id
+    if (!appointmentId) {
+      return NextResponse.json({ error: 'appointment_id is required' }, { status: 400 })
+    }
+
+    // Load appointment and student details
+    const { data: appt, error: fetchErr } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        student_id,
+        status,
+        time_range,
+        completed_at,
+        students (
+          id,
+          full_name,
+          matric_number
+        )
+      `)
+      .eq('id', appointmentId)
+      .single()
+
+    if (fetchErr) {
+      return NextResponse.json({ error: 'Failed to load appointment' }, { status: 500 })
+    }
+    if (!appt) {
+      return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+    }
+
+    // Only scheduled appointments can be completed and must have time_range
+    if (String(appt.status).toLowerCase() !== 'scheduled') {
+      return NextResponse.json({ error: 'Only scheduled appointments can be completed' }, { status: 400 })
+    }
+    if (!appt.time_range) {
+      return NextResponse.json({ error: 'Cannot complete an appointment without a scheduled time' }, { status: 400 })
+    }
+
+    // Ensure student_id not already in result_notifications
+    const { count: existsCount, error: existsErr } = await supabase
+      .from('result_notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('student_id', appt.student_id)
+
+    if (existsErr) {
+      return NextResponse.json({ error: 'Failed to validate existing notification' }, { status: 500 })
+    }
+    if ((existsCount || 0) > 0) {
+      return NextResponse.json({ error: 'A notification already exists for this student' }, { status: 409 })
+    }
+
+    const nowISO = new Date().toISOString()
+
+    // Insert notification row
+    const insertPayload = {
+      appointment_id: appt.id,
+      student_id: appt.student_id,
+      notified: false,
+      result_ready: true,
+      student_name: appt?.students?.full_name || null,
+      matric_number: appt?.students?.matric_number || null,
+      appointment_done_at: nowISO,
+      created_at: nowISO,
+      updated_at: nowISO,
+    }
+
+    const { data: notification, error: insertErr } = await supabase
+      .from('result_notifications')
+      .insert(insertPayload)
+      .select('*')
+      .single()
+
+    if (insertErr) {
+      // 23505 unique_violation possibly on appointment_id
+      const status = insertErr.code === '23505' ? 409 : 500
+      return NextResponse.json({ error: insertErr.message || 'Failed to create notification' }, { status })
+    }
+
+    // Mark appointment completed (do not delete due to FK constraint)
+    const { data: updatedAppt, error: updateErr } = await supabase
+      .from('appointments')
+      .update({ status: 'completed', completed_at: nowISO, updated_at: nowISO })
+      .eq('id', appt.id)
+      .select('id, status, completed_at')
+      .single()
+
+    if (updateErr) {
+      // If this fails, we still created a notification; log and return partial success
+      console.error('Failed to mark appointment completed:', updateErr)
+    }
+
+    return NextResponse.json({
+      message: 'Appointment completed and notification created',
+      notification,
+      appointment: updatedAppt || { id: appt.id, status: 'completed', completed_at: nowISO },
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Error in handleCompleteAppointment:', error)
+    return NextResponse.json({ error: 'Failed to complete appointment' }, { status: 500 })
   }
 }

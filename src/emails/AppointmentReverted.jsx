@@ -1,23 +1,20 @@
 import { Body, Container, Head, Heading, Hr, Html, Preview, Section, Text } from "@react-email/components"
 
-
-
-export default function AppointmentEmail({
+export default function AppointmentRevertedEmail({
   systemName,
   studentName,
   matricNumber,
-  start,
-  end,
+  note,
 }) {
   const safeSystemName = systemName || process.env.NEXT_PUBLIC_SYSTEM_NAME || process.env.SYSTEM_NAME || "NSUK Medical Scheduler"
   const safeStudentName = studentName || "Student"
   const safeMatricNumber = matricNumber || "—"
-  const safeStart = start || "TBD"
-  const safeEnd = end || "TBD"
+  const safeNote = note || "Your appointment has been reverted to pending. You will receive another notification once a new appointment is scheduled."
+
   return (
     <Html>
       <Head />
-      <Preview>{`${safeSystemName}: Appointment confirmed for ${safeStudentName}`}</Preview>
+      <Preview>{`${safeSystemName}: Appointment update for ${safeStudentName}`}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.header}>
@@ -28,38 +25,24 @@ export default function AppointmentEmail({
 
           <Section>
             <Heading as="h3" style={styles.title}>
-              Appointment Confirmation
+              Appointment Update
             </Heading>
             <Text style={styles.paragraph}>
               Dear {safeStudentName} ({safeMatricNumber}),
             </Text>
             <Text style={styles.paragraph}>
-              Your medical appointment has been scheduled. Please find the details below.
+              {safeNote}
             </Text>
           </Section>
 
           <Section style={styles.card}>
-            <Text style={styles.label}>Student</Text>
-            <Text style={styles.value}>{safeStudentName}</Text>
-
-            <Hr style={styles.hr} />
-
-            <Text style={styles.label}>Matric Number</Text>
-            <Text style={styles.value}>{safeMatricNumber}</Text>
-
-            <Hr style={styles.hr} />
-
-            <Text style={styles.label}>Appointment Window</Text>
-            <Text style={styles.value}>
-              Start: {safeStart}
-              <br />
-              End: {safeEnd}
-            </Text>
+            <Text style={styles.label}>Current Status</Text>
+            <Text style={styles.value}>Pending (no time scheduled yet)</Text>
           </Section>
 
           <Section>
             <Text style={styles.note}>
-              Please arrive 10 minutes early with your student ID. If you need to reschedule, reply to this email.
+              If you have questions or need assistance, you can reply to this email.
             </Text>
           </Section>
 
@@ -130,11 +113,6 @@ const styles = {
     margin: "0 0 8px 0",
     fontSize: "14px",
     color: "#000000",
-  },
-  hr: {
-    border: "none",
-    borderTop: "1px solid #000000",
-    margin: "12px 0",
   },
   hrLight: {
     border: "none",

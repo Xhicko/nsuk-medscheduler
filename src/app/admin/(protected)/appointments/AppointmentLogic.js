@@ -18,6 +18,8 @@ export default function AppointmentLogic() {
   // Derive counts from appointments list
   const [pendingCount, setPendingCount] = useState(0)
   const [scheduledCount, setScheduledCount] = useState(0)
+  // Sub-filter within scheduled tab: 'scheduled' | 'completed' | 'missed'
+  const [scheduledStatusFilter, setScheduledStatusFilter] = useState('scheduled')
 
   // Do not sync status to URL; keep UI state internal only
 
@@ -43,6 +45,18 @@ export default function AppointmentLogic() {
   // Delete flow state
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  // Undo flow state
+  const [isUndoConfirmOpen, setIsUndoConfirmOpen] = useState(false)
+  const [isUndoing, setIsUndoing] = useState(false)
+  // Complete flow state
+  const [isCompleteConfirmOpen, setIsCompleteConfirmOpen] = useState(false)
+  const [isCompleting, setIsCompleting] = useState(false)
+  // Edit sheet state
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
+  const [loadingAction, setLoadingAction] = useState(null) // 'reschedule' | 'missed' | 'pending' | null
+  const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false) // confirm before opening sheet
+  const [pendingRescheduleSelection, setPendingRescheduleSelection] = useState(null) // { date, start, end }
+  const [isRescheduleConfirmOpen, setIsRescheduleConfirmOpen] = useState(false)
 
   const fetchFaculties = async () => {
     setFacultiesLoading(true)
@@ -53,8 +67,9 @@ export default function AppointmentLogic() {
         setFaculties(verifiedFaculties)
       }
     } catch (error) {
-      console.error('Error fetching faculties:', error)
-      toast.error('Failed to load faculties')
+  console.error('Error fetching faculties:', error)
+  const message = error?.response?.data?.error || error?.message || 'Failed to load faculties'
+  toast.error(message)
     } finally {
       setFacultiesLoading(false)
     }
@@ -72,8 +87,9 @@ export default function AppointmentLogic() {
         setDepartments((previousState) => ({ ...previousState, [facultyId]: departmentsForFaculty }))
       }
     } catch (error) {
-      console.error('Error fetching departments:', error)
-      toast.error('Failed to load departments')
+  console.error('Error fetching departments:', error)
+  const message = error?.response?.data?.error || error?.message || 'Failed to load departments'
+  toast.error(message)
     } finally {
       setLoadingDepartments(false)
     }
@@ -84,7 +100,21 @@ export default function AppointmentLogic() {
     return departments[facultyId] || []
   }
 
-  const fetchAppointments = async (targetStatus = status, page = currentPage, search = searchTerm, faculty = facultyFilter, department = departmentFilter) => {
+  // Compute effective status for server and UI based on scheduled sub-filter
+  const getEffectiveStatus = () => {
+    if (status !== 'scheduled') return status
+    if (scheduledStatusFilter === 'completed' || scheduledStatusFilter === 'missed') return scheduledStatusFilter
+    return 'scheduled'
+  }
+
+  // Fetch appointments from the server
+  const fetchAppointments = async (
+    targetStatus = getEffectiveStatus(),
+    page = currentPage,
+    search = searchTerm,
+    faculty = facultyFilter,
+    department = departmentFilter
+  ) => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -93,7 +123,6 @@ export default function AppointmentLogic() {
       if (search && search.trim()) params.append('search', search.trim())
       if (faculty && faculty !== 'all') params.append('faculty', faculty)
       if (department && department !== 'all') params.append('department', department)
-      // Send status to get server-side filtered dataset & accurate pagination for the active panel
       if (targetStatus && targetStatus !== 'all') params.append('status', targetStatus)
 
       const response = await axios.get(`${ADMIN_ENDPOINTS.APPOINTMENTS}?${params.toString()}`)
@@ -101,22 +130,20 @@ export default function AppointmentLogic() {
         const appointmentsFromServer = response.data.appointments || []
         setAppointments(appointmentsFromServer)
         setTotalAppointmentsCount(response.data.pagination?.total || 0)
-        // Update toggle badge counts directly from server
         if (response.data.counts) {
           setPendingCount(response.data.counts.pending || 0)
           setScheduledCount(response.data.counts.scheduled || 0)
         }
-        // Keep server pagination in sync
         const serverPage = response.data.pagination?.page
         if (serverPage && serverPage !== currentPage) setCurrentPage(serverPage)
       } else {
         setAppointments([])
         setTotalAppointmentsCount(0)
       }
-
     } catch (error) {
       console.error('Error fetching appointments:', error)
-      toast.error('Failed to fetch appointments')
+      const message = error?.response?.data?.error || error?.message || 'Failed to fetch appointments'
+      toast.error(message)
       setAppointments([])
       setTotalAppointmentsCount(0)
     } finally {
@@ -124,15 +151,15 @@ export default function AppointmentLogic() {
     }
   }
 
-  // Refresh data when status changes (makes the header buttons useful immediately)
+  // Refresh data when status changes
   useEffect(() => {
-    fetchAppointments(status)
+    fetchAppointments()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
   // Initial load: fetch appointments + faculties
   useEffect(() => {
-    fetchAppointments(status)
+    fetchAppointments()
     fetchFaculties()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -145,13 +172,21 @@ export default function AppointmentLogic() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facultyFilter])
 
+  // Refetch on scheduled sub-filter change
+  useEffect(() => {
+    if (status === 'scheduled') {
+      fetchAppointments()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduledStatusFilter])
+
   // Search handler with debounce
   const handleSearchChange = (value) => {
     setSearchTerm(value)
     setCurrentPage(1)
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     searchTimeoutRef.current = setTimeout(() => {
-      fetchAppointments(status, 1, value, facultyFilter, departmentFilter)
+      fetchAppointments(getEffectiveStatus(), 1, value, facultyFilter, departmentFilter)
     }, 500)
   }
 
@@ -159,18 +194,18 @@ export default function AppointmentLogic() {
     setFacultyFilter(value)
     setDepartmentFilter('all')
     setCurrentPage(1)
-    fetchAppointments(status, 1, searchTerm, value, 'all')
+    fetchAppointments(getEffectiveStatus(), 1, searchTerm, value, 'all')
   }
 
   const handleDepartmentFilterChange = (value) => {
     setDepartmentFilter(value)
     setCurrentPage(1)
-    fetchAppointments(status, 1, searchTerm, facultyFilter, value)
+    fetchAppointments(getEffectiveStatus(), 1, searchTerm, facultyFilter, value)
   }
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
-    fetchAppointments(status, page, searchTerm, facultyFilter, departmentFilter)
+    fetchAppointments(getEffectiveStatus(), page, searchTerm, facultyFilter, departmentFilter)
   }
 
   // Schedule flow handlers
@@ -209,17 +244,87 @@ export default function AppointmentLogic() {
 
       const response = await axios.put(ADMIN_ENDPOINTS.APPOINTMENTS, payload)
       if (response.status === 200) {
-        toast.success('Appointment scheduled successfully')
+  toast.success(response?.data?.message || 'Appointment scheduled successfully')
         setIsScheduleModalOpen(false)
         // Refresh current panel data and counts
         fetchAppointments(status)
       } else {
-        toast.error('Failed to schedule appointment')
+  toast.error(response?.data?.error || response?.data?.message || 'Failed to schedule appointment')
       }
     } catch (error) {
       const errorMessage = (error?.response?.data?.error) || error?.message || 'Failed to schedule appointment'
       toast.error(errorMessage)
       console.error('Error scheduling appointment:', error)
+    }
+  }
+
+  // Undo scheduled appointment back to pending
+  const openUndoConfirm = (appointmentItem) => {
+    setSelectedItem(appointmentItem)
+    setIsUndoConfirmOpen(true)
+  }
+
+  const closeUndoConfirm = (open) => {
+    if (isUndoing) return
+    setIsUndoConfirmOpen(open)
+  }
+
+  const handleConfirmUndo = async () => {
+    if (!selectedItem?.id) return
+    try {
+      setIsUndoing(true)
+      const response = await axios.put(ADMIN_ENDPOINTS.APPOINTMENTS, {
+        appointment_id: selectedItem.id,
+        status: 'pending',
+        time_range: null,
+      })
+      if (response.status === 200) {
+  toast.success(response?.data?.message || 'Appointment returned to pending')
+        setIsUndoConfirmOpen(false)
+        setSelectedItem(null)
+        fetchAppointments(status)
+      } else {
+  toast.error(response?.data?.error || response?.data?.message || 'Failed to undo appointment')
+      }
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Failed to undo appointment'
+      toast.error(message)
+    } finally {
+      setIsUndoing(false)
+    }
+  }
+
+  // Complete flow handlers
+  const openCompleteConfirm = (appointmentItem) => {
+    setSelectedItem(appointmentItem)
+    setIsCompleteConfirmOpen(true)
+  }
+
+  const closeCompleteConfirm = (open) => {
+    if (isCompleting) return
+    setIsCompleteConfirmOpen(open)
+  }
+
+  const handleConfirmComplete = async () => {
+    if (!selectedItem?.id) return
+    try {
+      setIsCompleting(true)
+      const response = await axios.post(ADMIN_ENDPOINTS.APPOINTMENTS, {
+        appointment_id: selectedItem.id,
+      })
+      if (response.status === 200 || response.status === 201) {
+        toast.success(response?.data?.message || 'Appointment marked as completed')
+        setIsCompleteConfirmOpen(false)
+        setSelectedItem(null)
+        fetchAppointments(status)
+      } else {
+        toast.error(response?.data?.error || response?.data?.message || 'Failed to complete appointment')
+      }
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Failed to complete appointment'
+      toast.error(message)
+    } finally {
+      setIsCompleting(false)
     }
   }
 
@@ -302,7 +407,15 @@ export default function AppointmentLogic() {
   }, [appointments])
 
   const pendingList = useMemo(() => normalizedAppointments.filter((appointmentItem) => (appointmentItem.status || '').toLowerCase() === 'pending'), [normalizedAppointments])
-  const scheduledList = useMemo(() => normalizedAppointments.filter((appointmentItem) => (appointmentItem.status || '').toLowerCase() === 'scheduled'), [normalizedAppointments])
+  // List for scheduled tab honoring sub-filter
+  const scheduledList = useMemo(() => {
+    return normalizedAppointments.filter((appointmentItem) => {
+      const s = (appointmentItem.status || '').toLowerCase()
+      if (status !== 'scheduled') return false
+      if (scheduledStatusFilter === 'completed' || scheduledStatusFilter === 'missed') return s === scheduledStatusFilter
+      return s === 'scheduled'
+    })
+  }, [normalizedAppointments, status, scheduledStatusFilter])
 
   // Selected student mapped for modal shape
   const selectedStudentForModal = useMemo(() => {
@@ -359,6 +472,7 @@ export default function AppointmentLogic() {
             title="Mark complete"
             className="text-green-600 hover:text-green-800 p-1 rounded cursor-pointer"
             aria-label="Mark appointment complete"
+            onClick={() => openCompleteConfirm(item)}
           >
             <CheckCircle className="h-4 w-4" />
           </button>
@@ -366,6 +480,7 @@ export default function AppointmentLogic() {
             title="Undo appointment"
             className="text-red-600 hover:text-red-800 p-1 rounded cursor-pointer"
             aria-label="Undo appointment"
+            onClick={() => openUndoConfirm(item)}
           >
             <RotateCcw  className="h-4 w-4" />
           </button>
@@ -373,6 +488,7 @@ export default function AppointmentLogic() {
             title="Edit appointment"
             className="text-[#0077B6] hover:text-[#0077B6]/90 p-1 rounded cursor-pointer"
             aria-label="Edit appointment"
+            onClick={() => openEditSheet(item)}
           >
             <Pencil className="h-4 w-4" />
           </button>
@@ -380,6 +496,141 @@ export default function AppointmentLogic() {
       )
     },
   ]
+
+  // Edit sheet helpers
+  const openEditSheet = (appointmentItem) => {
+    setSelectedItem(appointmentItem)
+    setIsEditConfirmOpen(true)
+  }
+
+  const handleEditSheetOpenChange = (open) => {
+    if (loadingAction) return
+    setIsEditSheetOpen(open)
+  }
+
+  const selectedStudentForEdit = useMemo(() => {
+    if (!selectedItem) return null
+    return {
+      id: selectedItem.student_id,
+      matricNumber: selectedItem.matric_number,
+      fullName: selectedItem.student_name,
+      department: selectedItem.department_name,
+      faculty: selectedItem.faculty_name,
+    }
+  }, [selectedItem])
+
+  const initialRangeForEdit = useMemo(() => {
+    if (!selectedItem) return null
+    const date = selectedItem.start_date || null
+    const fmt = (d) => d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : ''
+    return {
+      date,
+      start: selectedItem.start_date ? fmt(selectedItem.start_date) : '',
+      end: selectedItem.end_date ? fmt(selectedItem.end_date) : '',
+    }
+  }, [selectedItem])
+
+  // Reschedule flow from sheet: confirm before applying
+  const requestReschedule = (student, date, startTime, endTime) => {
+    setPendingRescheduleSelection({ date, start: startTime, end: endTime })
+    setIsRescheduleConfirmOpen(true)
+  }
+
+  const closeEditConfirm = (open) => {
+    if (loadingAction) return
+    setIsEditConfirmOpen(open)
+  }
+
+  const handleConfirmEditOpen = () => {
+    setIsEditConfirmOpen(false)
+    setIsEditSheetOpen(true)
+  }
+
+  const closeRescheduleConfirm = (open) => {
+    if (loadingAction) return
+    setIsRescheduleConfirmOpen(open)
+  }
+
+  const handleConfirmReschedule = async () => {
+    if (!selectedItem?.id || !pendingRescheduleSelection) return
+    const { date, start, end } = pendingRescheduleSelection
+    try {
+      setLoadingAction('reschedule')
+      const [startHour, startMinute] = String(start).split(':').map(Number)
+      const [endHour, endMinute] = String(end).split(':').map(Number)
+      const startDt = new Date(date)
+      startDt.setHours(startHour || 0, startMinute || 0, 0, 0)
+      const endDt = new Date(date)
+      endDt.setHours(endHour || 0, endMinute || 0, 0, 0)
+
+      const response = await axios.put(ADMIN_ENDPOINTS.APPOINTMENTS, {
+        appointment_id: selectedItem.id,
+        status: 'scheduled',
+        time_range: `[${startDt.toISOString()},${endDt.toISOString()})`,
+      })
+      if (response.status === 200) {
+        toast.success(response?.data?.message || 'Appointment rescheduled')
+        setIsRescheduleConfirmOpen(false)
+        setPendingRescheduleSelection(null)
+        fetchAppointments(status)
+      } else {
+        toast.error(response?.data?.error || response?.data?.message || 'Failed to reschedule appointment')
+      }
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Failed to reschedule appointment'
+      toast.error(message)
+    } finally {
+      setLoadingAction(null)
+    }
+  }
+
+  const handleMarkMissed = async () => {
+    if (!selectedItem?.id) return
+    try {
+      setLoadingAction('missed')
+      const response = await axios.put(ADMIN_ENDPOINTS.APPOINTMENTS, {
+        appointment_id: selectedItem.id,
+        status: 'missed',
+      })
+      if (response.status === 200) {
+        toast.success(response?.data?.message || 'Student notified of missed appointment')
+        // Keep sheet open; refresh to reflect new status if visible elsewhere
+        fetchAppointments(status)
+      } else {
+        toast.error(response?.data?.error || response?.data?.message || 'Failed to mark missed')
+      }
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Failed to mark missed'
+      toast.error(message)
+    } finally {
+      setLoadingAction(null)
+    }
+  }
+
+  const handleRevertPendingFromSheet = async () => {
+    if (!selectedItem?.id) return
+    try {
+      setLoadingAction('pending')
+      const response = await axios.put(ADMIN_ENDPOINTS.APPOINTMENTS, {
+        appointment_id: selectedItem.id,
+        status: 'pending',
+        time_range: null,
+      })
+      if (response.status === 200) {
+        toast.success(response?.data?.message || 'Appointment reverted to pending')
+        setIsEditSheetOpen(false)
+        setSelectedItem(null)
+        fetchAppointments(status)
+      } else {
+        toast.error(response?.data?.error || response?.data?.message || 'Failed to revert to pending')
+      }
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Failed to revert to pending'
+      toast.error(message)
+    } finally {
+      setLoadingAction(null)
+    }
+  }
 
   return {
   // Data
@@ -401,6 +652,8 @@ export default function AppointmentLogic() {
   setDepartmentFilter: handleDepartmentFilterChange,
   facultiesData: faculties,
   getDepartments,
+  scheduledStatusFilter,
+  setScheduledStatusFilter,
 
   // Pagination
   currentPage,
@@ -428,5 +681,30 @@ export default function AppointmentLogic() {
   closeDeleteConfirm,
   handleConfirmDelete,
   isDeleting,
+  // Undo flow props
+  isUndoConfirmOpen,
+  closeUndoConfirm,
+  handleConfirmUndo,
+  isUndoing,
+  // Complete flow props
+  isCompleteConfirmOpen,
+  closeCompleteConfirm,
+  handleConfirmComplete,
+  isCompleting,
+  // Edit sheet props
+  isEditSheetOpen,
+  handleEditSheetOpenChange,
+  selectedStudentForEdit,
+  initialRangeForEdit,
+  requestReschedule,
+  isEditConfirmOpen,
+  closeEditConfirm,
+  handleConfirmEditOpen,
+  isRescheduleConfirmOpen,
+  closeRescheduleConfirm,
+  handleConfirmReschedule,
+  handleMarkMissed,
+  handleRevertPendingFromSheet,
+  loadingAction,
   }
 }
