@@ -41,6 +41,11 @@ export default function AppointmentView({
    handleScheduleModalOpenChange = () => {},
    handleScheduleSubmit = () => {},
    selectedStudentForModal = null,
+   // delete flow
+   isDeleteConfirmOpen = false,
+   closeDeleteConfirm = () => {},
+   handleConfirmDelete = () => {},
+   isDeleting = false,
 }) {
    const handleReload = () => {
       fetchAppointments(status)
@@ -206,6 +211,18 @@ export default function AppointmentView({
                   student={selectedStudentForModal}
                   onSchedule={handleScheduleSubmit}
                   onCancel={() => handleScheduleModalOpenChange(false)}
+               />
+
+               {/* Delete confirmation dialog */}
+               <ConfirmationDialog
+                  isOpen={isDeleteConfirmOpen}
+                  onOpenChange={closeDeleteConfirm}
+                  title="Delete pending appointment?"
+                  description={selectedStudentForModal ? `This will remove the pending appointment for ${selectedStudentForModal.fullName} (${selectedStudentForModal.matricNumber}).` : 'This will remove the pending appointment.'}
+                  onConfirm={handleConfirmDelete}
+                  confirmText={isDeleting ? 'Deleting…' : 'Delete'}
+                  cancelText="Cancel"
+                  isLoading={isDeleting}
                />
 
     </div>

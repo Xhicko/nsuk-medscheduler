@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
-import { CalendarPlus, CheckCircle, RotateCcw, Pencil } from 'lucide-react'
+import { CalendarPlus, CheckCircle, RotateCcw, Pencil, Trash2 } from 'lucide-react'
 
 export default function AppointmentLogic() {
   // Core data (to be wired to API later)
@@ -40,6 +40,9 @@ export default function AppointmentLogic() {
   const [isScheduleConfirmOpen, setIsScheduleConfirmOpen] = useState(false)
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
+  // Delete flow state
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchFaculties = async () => {
     setFacultiesLoading(true)
@@ -220,6 +223,39 @@ export default function AppointmentLogic() {
     }
   }
 
+  // Delete flow handlers
+  const openDeleteConfirm = (appointmentItem) => {
+    setSelectedItem(appointmentItem)
+    setIsDeleteConfirmOpen(true)
+  }
+
+  const closeDeleteConfirm = (open) => {
+    // Prevent closing while deleting
+    if (isDeleting) return
+    setIsDeleteConfirmOpen(open)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!selectedItem?.id) return
+    try {
+      setIsDeleting(true)
+      const response = await axios.delete(`${ADMIN_ENDPOINTS.APPOINTMENTS}?appointment_id=${selectedItem.id}`)
+      if (response.status === 200) {
+        toast.success(response.data.message)
+        setIsDeleteConfirmOpen(false)
+        setSelectedItem(null)
+        fetchAppointments(status)
+      } else {
+        toast.error('Failed to delete appointment')
+      }
+    } catch (error) {
+      const message = (error?.response?.data?.error) || error?.message || 'Failed to delete appointment'
+      toast.error(message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   // Client-side formatting and splits
   const normalizedAppointments = useMemo(() => {
     // Shape: include student fields surfaced for the table
@@ -288,7 +324,7 @@ export default function AppointmentLogic() {
     { key: 'faculty_name', header: 'Faculty', render: (item) => <span className="text-gray-600">{item.faculty_name}</span> },
     {
       key: 'action', header: 'Action', className: 'text-right', render: (item) => (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-2">
           <button
             title="Schedule appointment"
             className="text-[#0077B6] hover:text-[#0077B6]/90 p-1 rounded cursor-pointer"
@@ -296,6 +332,14 @@ export default function AppointmentLogic() {
             onClick={() => openScheduleConfirm(item)}
           >
             <CalendarPlus className="h-4 w-4" />
+          </button>
+          <button
+            title="Delete pending appointment"
+            className="text-red-600 hover:text-red-800 p-1 rounded cursor-pointer"
+            aria-label="Delete pending appointment"
+            onClick={() => openDeleteConfirm(item)}
+          >
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       )
@@ -379,5 +423,10 @@ export default function AppointmentLogic() {
   handleScheduleModalOpenChange,
   handleScheduleSubmit,
   selectedStudentForModal,
+  // Delete flow props
+  isDeleteConfirmOpen,
+  closeDeleteConfirm,
+  handleConfirmDelete,
+  isDeleting,
   }
 }

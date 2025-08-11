@@ -45,8 +45,7 @@ async function handleRequest(request, method) {
       case 'PUT':
   return await handleUpdateAppointment(request, supabase)
       case 'DELETE':
-        // Default delete stub
-        return NextResponse.json({ message: 'Appointment deleted successfully' }, { status: 200 })
+  return await handleDeleteAppointment(request, supabase)
       default:
         return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
     }
@@ -215,6 +214,48 @@ async function handleGetAppointments(request, supabase) {
   } catch (error) {
     console.error('Error in handleGetAppointments:', error)
     return NextResponse.json({ error: 'Failed to fetch appointments' }, { status: 500 })
+  }
+}
+
+// DELETE: Delete an appointment only if it's pending
+async function handleDeleteAppointment(request, supabase) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const appointmentId = searchParams.get('appointment_id') || searchParams.get('id')
+    if (!appointmentId) {
+      return NextResponse.json({ error: 'appointment_id is required' }, { status: 400 })
+    }
+
+    // Ensure appointment exists and is pending
+    const { data: existing, error: fetchError } = await supabase
+      .from('appointments')
+      .select('id, status')
+      .eq('id', appointmentId)
+      .single()
+
+    if (fetchError) {
+      return NextResponse.json({ error: 'Failed to fetch appointment' }, { status: 500 })
+    }
+    if (!existing) {
+      return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+    }
+    if (String(existing.status).toLowerCase() !== 'pending') {
+      return NextResponse.json({ error: 'Only pending appointments can be deleted' }, { status: 400 })
+    }
+
+    const { error: deleteError } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('id', appointmentId)
+
+    if (deleteError) {
+      return NextResponse.json({ error: 'Failed to delete appointment' }, { status: 500 })
+    }
+
+    return NextResponse.json({ message: 'Appointment deleted successfully' }, { status: 200 })
+  } catch (error) {
+    console.error('Error in handleDeleteAppointment:', error)
+    return NextResponse.json({ error: 'Failed to delete appointment' }, { status: 500 })
   }
 }
 
