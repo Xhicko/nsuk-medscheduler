@@ -167,7 +167,7 @@ export default function AppointmentView({
                                     placeholder="Search students..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 w-64 rounded-xl bg-white border-gray-200 text-gray-700"
+                                    className="pl-10 w-64 h-14 rounded-xl bg-white border-gray-200 text-gray-700"
                                  />
                               </div>
                                            {status === 'scheduled' && (
