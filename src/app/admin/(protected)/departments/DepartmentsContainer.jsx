@@ -5,12 +5,12 @@ import DepartmentsView from './DepartmentsView'
 import DepartmentsLogic from './DepartmentsLogic'
 import { useAuthStore } from '@/store/authStore'
 
-export default function DepartmentsContainer() {
+export default function DepartmentsContainer({ initialData }) {
    const loading = useAuthStore(state => state.loading)
    const initialized = useAuthStore(state => state.initialized)
    const authInitialized = initialized && !loading
    
-   const logicProps = DepartmentsLogic()
+   const logicProps = DepartmentsLogic(initialData)
 
    if(!authInitialized) {
       return <DepartmentsSkeleton />

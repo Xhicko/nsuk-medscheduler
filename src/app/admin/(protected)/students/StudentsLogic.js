@@ -1,20 +1,20 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
 import useDepartmentsStore from '@/store/admin/departmentsStore'
 import { Pencil, Trash2 } from 'lucide-react'
 
-export default function StudentsLogic(){
+export default function StudentsLogic(initialData){
    // Students management states
-   const [students, setStudents] = useState([])
+   const [students, setStudents] = useState(initialData?.students || [])
    const [loading, setLoading] = useState(false)
    const [selectedStudent, setSelectedStudent] = useState(null)
    const [isModalOpen, setIsModalOpen] = useState(false)
    const [deleteLoading, setDeleteLoading] = useState(false)
-   const [totalStudentsCount, setTotalStudentsCount] = useState(0)
+   const [totalStudentsCount, setTotalStudentsCount] = useState(initialData?.pagination?.total || 0)
    
    // Define handleReloadData function for reloading student data
    // This will be passed to StudentUploadModalLogic in the container
@@ -35,10 +35,10 @@ export default function StudentsLogic(){
    const [saveLoading, setSaveLoading] = useState(false)
    
    // Search and filter states
-   const [searchTerm, setSearchTerm] = useState("")
-   const [facultyFilter, setFacultyFilter] = useState("all")
-   const [departmentFilter, setDepartmentFilter] = useState("all")
-   const [statusFilter, setStatusFilter] = useState("all")
+   const [searchTerm, setSearchTerm] = useState(initialData?.filters?.searchTerm ?? "")
+   const [facultyFilter, setFacultyFilter] = useState(initialData?.filters?.faculty ?? "all")
+   const [departmentFilter, setDepartmentFilter] = useState(initialData?.filters?.department ?? "all")
+   const [statusFilter, setStatusFilter] = useState(initialData?.filters?.status ?? "all")
    
    // Faculties and departments data from store
    const { 
@@ -52,7 +52,7 @@ export default function StudentsLogic(){
    const facultiesLoading = departmentsLoading
    
    // Pagination states
-   const [currentPage, setCurrentPage] = useState(1)
+   const [currentPage, setCurrentPage] = useState(initialData?.pagination?.page || 1)
    const [itemsPerPage] = useState(10)
 
    // Helper to get departments for a specific faculty id
@@ -136,7 +136,7 @@ export default function StudentsLogic(){
       }
    }
 
-   // Server-side pagination - no client-side filtering needed
+   // Server-side pagination 
    const currentStudents = students // Use students directly from server
    const totalPages = Math.ceil(totalStudentsCount / itemsPerPage)
 
@@ -355,7 +355,6 @@ export default function StudentsLogic(){
       }
    }
 
-   // handleReloadData is now defined at the top of the component
 
    // Status color helper
    const getStatusColor = (status) => {
@@ -364,7 +363,6 @@ export default function StudentsLogic(){
          : "bg-amber-50 text-amber-700 border-amber-200"
    }
    
-   // This function is already defined above - removed duplicate
 
    // Actions handlers
    const handleEditClick = (student) => {
@@ -442,10 +440,6 @@ export default function StudentsLogic(){
       },
    ]
 
-   // Initial load only - no useEffect dependency arrays
-   useEffect(() => {
-      fetchStudents()
-   }, []) // Empty dependency array for initial load only
 
    return {
       // Data

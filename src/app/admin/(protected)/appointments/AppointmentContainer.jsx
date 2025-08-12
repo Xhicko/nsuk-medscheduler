@@ -5,12 +5,12 @@ import AppointmentSkeleton from './AppointmentSkeleton'
 import AppointmentLogic from './AppointmentLogic'
 import { useAuthStore } from '@/store/authStore'
 
-export default function AppointmentContainer() {
+export default function AppointmentContainer({ initialData }) {
   const loading = useAuthStore((state) => state.loading)
   const initialized = useAuthStore((state) => state.initialized)
   const authInitialized = initialized && !loading
 
-  const logic = AppointmentLogic()
+  const logic = AppointmentLogic(initialData)
 
   if (!authInitialized) {
     return <AppointmentSkeleton />

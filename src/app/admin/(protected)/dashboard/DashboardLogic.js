@@ -1,4 +1,3 @@
-import {useState} from 'react'
 import { useAdminStore } from '@/store/admin/adminStore'
 import { useDashboardStore } from '@/store/admin/dashboardStore'
 import { BadgeCheck, BadgeX, Clock, Calendar, Cog} from 'lucide-react'
@@ -21,9 +20,9 @@ export default function DashboardLogic(){
    const todaysAppointments = getTodaysAppointments()
    const recentMissedAppointments = getRecentMissedAppointments()
 
-   if (!initialized || isDataStale()) {
-      Promise.resolve().then(() => fetchIfNeeded())
-   }
+  if (typeof window !== 'undefined' && (!initialized || isDataStale())) {
+    Promise.resolve().then(() => fetchIfNeeded())
+  }
 
     //  Stats for the progress bar
     const MAX = 30000;

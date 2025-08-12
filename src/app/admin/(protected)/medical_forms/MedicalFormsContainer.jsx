@@ -5,12 +5,12 @@ import MedicalFormsSkeleton from './MedicalFormsSkeleton'
 import { useAuthStore } from '@/store/authStore'
 import MedicalFormsLogic from './MedicalFormsLogic'
 
-export default function MedicalFormsContainer() {
+export default function MedicalFormsContainer({ initialData }) {
    const loading = useAuthStore(state => state.loading)
    const initialized = useAuthStore(state => state.initialized)
    const authInitialized = initialized && !loading
    
-  const logic = MedicalFormsLogic()
+  const logic = MedicalFormsLogic(initialData)
 
     if(!authInitialized) {
       return <MedicalFormsSkeleton />

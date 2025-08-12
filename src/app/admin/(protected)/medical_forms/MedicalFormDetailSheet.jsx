@@ -80,7 +80,7 @@ export default function MedicalFormDetailSheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className={cn("w-full sm:max-w-3xl rounded-none p-0 flex flex-col", "data-[state=open]:animate-in")} side="right">
         <div className="h-1 w-full bg-[#0077B6]" />
-        <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
+        <div className="sticky top-0  bg-white/90 backdrop-blur border-b">
           <SheetHeader className="px-6 py-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">

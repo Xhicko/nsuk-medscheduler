@@ -3,6 +3,7 @@ import AppointmentEmail from '@emails/ScheduleAppointment'
 import AppointmentRevertedEmail from '@emails/AppointmentReverted'
 import AppointmentMissedEmail from '@emails/AppointmentMissed'
 import AppointmentRescheduledEmail from '@emails/AppointmentRescheduled'
+import ResultReadyEmail from '@emails/ResultReady'
 
 import { getMTATransporter } from '@lib/mailer'
 
@@ -163,6 +164,41 @@ export async function sendAppointmentRescheduled({ to, systemName, studentName, 
     return true
   } catch (error) {
     console.error('Error sending appointment rescheduled email:', error)
+    throw error
+  }
+}
+
+export async function sendResultReady({ to, systemName, studentName, matricNumber }) {
+  const html = await render(
+    <ResultReadyEmail
+      systemName={systemName}
+      studentName={studentName}
+      matricNumber={matricNumber}
+    />
+  )
+
+  const text = await render(
+    <ResultReadyEmail
+      systemName={systemName}
+      studentName={studentName}
+      matricNumber={matricNumber}
+    />,
+    { plainText: true }
+  )
+
+  try {
+    const transporter = getMTATransporter()
+    const mailOptions = {
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to,
+      subject: 'Your medical test result is ready',
+      html,
+      text,
+    }
+    await transporter.sendMail(mailOptions)
+    return true
+  } catch (error) {
+    console.error('Error sending result ready email:', error)
     throw error
   }
 }

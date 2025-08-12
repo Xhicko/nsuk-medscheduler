@@ -5,12 +5,12 @@ import FacultiesView from './FacultiesView'
 import FacultiesLogic from './FacultiesLogic'
 import { useAuthStore } from '@/store/authStore'
 
-export default function FacultiesContainer() {
+export default function FacultiesContainer({ initialData }) {
    const loading = useAuthStore(state => state.loading)
    const initialized = useAuthStore(state => state.initialized)
    const authInitialized = initialized && !loading
    
-   const logicProps = FacultiesLogic()
+   const logicProps = FacultiesLogic(initialData)
 
    if(!authInitialized) {
       return <FacultiesSkeleton />

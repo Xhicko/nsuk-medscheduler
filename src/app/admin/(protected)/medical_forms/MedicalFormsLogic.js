@@ -7,13 +7,25 @@ import { toast } from 'react-hot-toast'
 // Direct API calls instead of using departmentsStore
 import { Pencil, Trash2, Eye } from 'lucide-react'
 
-export default function MedicalFormsLogic() {
+export default function MedicalFormsLogic(initialData) {
+   // Normalize forms to the shape the table expects
+   const processForms = (formsData = []) => {
+      return (formsData || []).map(form => ({
+         ...form,
+         student_name: form.students?.full_name || 'N/A',
+         matric_number: form.students?.matric_number || 'N/A',
+         faculty_name: form.students?.faculties?.name || 'N/A',
+         department_name: form.students?.departments?.name || 'N/A',
+         submitted_date: form.submitted_at ? new Date(form.submitted_at).toLocaleDateString() : 'N/A',
+         submitted_time: form.submitted_at ? new Date(form.submitted_at).toLocaleTimeString() : ''
+      }))
+   }
    // Medical forms management states
-   const [medicalForms, setMedicalForms] = useState([])
+   const [medicalForms, setMedicalForms] = useState(() => processForms(initialData?.medicalForms || []))
    const [loading, setLoading] = useState(false)
    const [selectedMedicalForm, setSelectedMedicalForm] = useState(null)
    const [deleteLoading, setDeleteLoading] = useState(false)
-   const [totalMedicalFormsCount, setTotalMedicalFormsCount] = useState(0)
+   const [totalMedicalFormsCount, setTotalMedicalFormsCount] = useState(initialData?.pagination?.total || 0)
    
    // View modal states
    const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -36,19 +48,19 @@ export default function MedicalFormsLogic() {
    const [medicalFormToEdit, setMedicalFormToEdit] = useState(null)
    
    // Search and filter states
-   const [searchTerm, setSearchTerm] = useState("")
-   const [facultyFilter, setFacultyFilter] = useState("all")
-   const [departmentFilter, setDepartmentFilter] = useState("all")
-   const [completedFilter, setCompletedFilter] = useState("all")
+   const [searchTerm, setSearchTerm] = useState(initialData?.filters?.searchTerm ?? "")
+   const [facultyFilter, setFacultyFilter] = useState(initialData?.filters?.faculty ?? "all")
+   const [departmentFilter, setDepartmentFilter] = useState(initialData?.filters?.department ?? "all")
+   const [completedFilter, setCompletedFilter] = useState(initialData?.filters?.completed ?? "all")
    
    // Direct faculties and departments state - fetch from API endpoints
-   const [faculties, setFaculties] = useState([])
+   const [faculties, setFaculties] = useState(initialData?.faculties || [])
    const [facultiesLoading, setFacultiesLoading] = useState(false)
    const [departments, setDepartments] = useState({})
    const [loadingDepartments, setLoadingDepartments] = useState(false)
    
    // Pagination states
-   const [currentPage, setCurrentPage] = useState(1)
+   const [currentPage, setCurrentPage] = useState(initialData?.pagination?.page || 1)
    const [itemsPerPage] = useState(10)
 
    // Function to fetch faculties directly from faculties endpoint
@@ -137,19 +149,7 @@ export default function MedicalFormsLogic() {
          const response = await axios.get(`${ADMIN_ENDPOINTS.MEDICAL_FORMS}?${params.toString()}`)         
          if(response.status === 200){
             const formsData = response.data.medicalForms || []
-            
-            // Process the medical forms data
-            const processedForms = formsData.map(form => ({
-               ...form,
-               student_name: form.students?.full_name || 'N/A',
-               matric_number: form.students?.matric_number || 'N/A',
-               faculty_name: form.students?.faculties?.name || 'N/A',
-               department_name: form.students?.departments?.name || 'N/A',
-               submitted_date: new Date(form.submitted_at).toLocaleDateString(),
-               submitted_time: new Date(form.submitted_at).toLocaleTimeString(),
-            }))
-            
-            setMedicalForms(processedForms)
+            setMedicalForms(processForms(formsData))
             setTotalMedicalFormsCount(response.data.pagination?.total || 0)
             
             // Update pagination info from server response
@@ -716,10 +716,7 @@ export default function MedicalFormsLogic() {
    ]
 
    // Initial load only - fetch both medical forms and faculties
-   useEffect(() => {
-      fetchMedicalForms()
-      fetchFaculties()
-   }, []) // Empty dependency array for initial load only
+   // No initial fetch on mount; initialData seeds the table. Fetch only on user actions.
    
    // Load departments whenever faculty filter changes
    useEffect(() => {

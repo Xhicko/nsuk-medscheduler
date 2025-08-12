@@ -6,14 +6,14 @@ import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast' 
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
-export default function DepartmentsLogic(){
+export default function DepartmentsLogic(initialData){
    // Departments management states
-   const [departments, setDepartments] = useState([])
+   const [departments, setDepartments] = useState(initialData?.departments || [])
    const [loading, setLoading] = useState(false)
    const [selectedDepartment, setSelectedDepartment] = useState(null)
    const [isModalOpen, setIsModalOpen] = useState(false)
    const [deleteLoading, setDeleteLoading] = useState(false)
-   const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(0)
+   const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(initialData?.departments?.length || 0)
    
    // Delete confirmation states
    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -29,7 +29,7 @@ export default function DepartmentsLogic(){
    const [isEditMode, setIsEditMode] = useState(false)
    
    // Faculties data for selection
-   const [facultiesData, setFacultiesData] = useState([])
+   const [facultiesData, setFacultiesData] = useState(initialData?.faculties || [])
    const [facultiesLoading, setFacultiesLoading] = useState(false)
    
    // Search and filter states
@@ -165,10 +165,7 @@ export default function DepartmentsLogic(){
    }
 
    // Initial data fetch
-   useEffect(() => {
-      fetchDepartments()
-      fetchFaculties()
-   }, [])
+   // No initial fetch on mount; initialData seeds the table. Fetch only on user actions.
    
    const openDeleteModal = (department) => {
       setDepartmentToDelete(department)

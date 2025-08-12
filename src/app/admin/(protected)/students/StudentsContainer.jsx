@@ -6,13 +6,13 @@ import StudentsLogic from './StudentsLogic'
 import StudentUploadModalLogic from './StudentUploadModalLogic'
 import { useAuthStore } from '@/store/authStore'
 
-export default function StudentsContainer() {
+export default function StudentsContainer({ initialData }) {
    const loading = useAuthStore(state => state.loading)
    const initialized = useAuthStore(state => state.initialized)
    const authInitialized = initialized && !loading
    
    // Get students logic props
-   const studentsLogic = StudentsLogic()
+   const studentsLogic = StudentsLogic(initialData)
    
    // Get upload modal logic props directly, passing the reload function
    const uploadModalLogic = StudentUploadModalLogic(studentsLogic.handleReloadData)

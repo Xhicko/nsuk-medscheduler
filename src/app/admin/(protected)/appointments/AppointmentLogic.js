@@ -6,34 +6,33 @@ import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
 import { CalendarPlus, CheckCircle, RotateCcw, Pencil, Trash2 } from 'lucide-react'
 
-export default function AppointmentLogic() {
+export default function AppointmentLogic(initialData) {
   // Core data (to be wired to API later)
-  const [appointments, setAppointments] = useState([])
+  const [appointments, setAppointments] = useState(initialData?.appointments || [])
   const [loading, setLoading] = useState(false)
-  const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0)
+  const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(initialData?.pagination?.total || 0)
 
   // Status panel: 'pending' (no given appointment yet) | 'scheduled' (has appointment)
-  const [status, setStatus] = useState('pending')
+  const [status, setStatus] = useState(initialData?.status || 'pending')
 
   // Derive counts from appointments list
-  const [pendingCount, setPendingCount] = useState(0)
-  const [scheduledCount, setScheduledCount] = useState(0)
+  const [pendingCount, setPendingCount] = useState(initialData?.counts?.pending || 0)
+  const [scheduledCount, setScheduledCount] = useState(initialData?.counts?.scheduled || 0)
   // Sub-filter within scheduled tab: 'scheduled' | 'completed' | 'missed'
   const [scheduledStatusFilter, setScheduledStatusFilter] = useState('scheduled')
 
-  // Do not sync status to URL; keep UI state internal only
-
   // Fetch appointments (placeholder – wire API later)
   // Filters & pagination
-  const [searchTerm, setSearchTerm] = useState('')
-  const [facultyFilter, setFacultyFilter] = useState('all')
-  const [departmentFilter, setDepartmentFilter] = useState('all')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [searchTerm, setSearchTerm] = useState(initialData?.filters?.searchTerm ?? '')
+  const [facultyFilter, setFacultyFilter] = useState(initialData?.filters?.faculty ?? 'all')
+  const [departmentFilter, setDepartmentFilter] = useState(initialData?.filters?.department ?? 'all')
+  const [currentPage, setCurrentPage] = useState(initialData?.pagination?.page || 1)
   const [itemsPerPage] = useState(10)
   const searchTimeoutRef = useRef(null)
+  const didMountRef = useRef(false)
 
   // Faculties and departments
-  const [faculties, setFaculties] = useState([])
+  const [faculties, setFaculties] = useState(initialData?.faculties || [])
   const [departments, setDepartments] = useState({})
   const [facultiesLoading, setFacultiesLoading] = useState(false)
   const [loadingDepartments, setLoadingDepartments] = useState(false)
@@ -53,9 +52,9 @@ export default function AppointmentLogic() {
   const [isCompleting, setIsCompleting] = useState(false)
   // Edit sheet state
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
-  const [loadingAction, setLoadingAction] = useState(null) // 'reschedule' | 'missed' | 'pending' | null
-  const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false) // confirm before opening sheet
-  const [pendingRescheduleSelection, setPendingRescheduleSelection] = useState(null) // { date, start, end }
+  const [loadingAction, setLoadingAction] = useState(null) 
+  const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false) 
+  const [pendingRescheduleSelection, setPendingRescheduleSelection] = useState(null) 
   const [isRescheduleConfirmOpen, setIsRescheduleConfirmOpen] = useState(false)
 
   const fetchFaculties = async () => {
@@ -153,31 +152,27 @@ export default function AppointmentLogic() {
 
   // Refresh data when status changes
   useEffect(() => {
+    // Skip first run to avoid duplicating SSR initial fetch
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      return
+    }
     fetchAppointments()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
-
-  // Initial load: fetch appointments + faculties
-  useEffect(() => {
-    fetchAppointments()
-    fetchFaculties()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // Load departments when faculty changes
   useEffect(() => {
     if (facultyFilter && facultyFilter !== 'all') {
       fetchDepartmentsForFaculty(facultyFilter)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facultyFilter])
 
   // Refetch on scheduled sub-filter change
   useEffect(() => {
+    if (!didMountRef.current) return
     if (status === 'scheduled') {
       fetchAppointments()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduledStatusFilter])
 
   // Search handler with debounce

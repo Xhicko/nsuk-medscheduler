@@ -6,14 +6,14 @@ import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
-export default function FacultiesLogic(){
+export default function FacultiesLogic(initialData){
    // Faculties management states
-   const [faculties, setFaculties] = useState([])
+   const [faculties, setFaculties] = useState(initialData?.faculties || [])
    const [loading, setLoading] = useState(false)
    const [selectedFaculty, setSelectedFaculty] = useState(null)
    const [isModalOpen, setIsModalOpen] = useState(false)
    const [deleteLoading, setDeleteLoading] = useState(false)
-   const [totalFacultiesCount, setTotalFacultiesCount] = useState(0)
+   const [totalFacultiesCount, setTotalFacultiesCount] = useState(initialData?.faculties?.length || 0)
    
    // Delete confirmation states
    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -29,8 +29,8 @@ export default function FacultiesLogic(){
    const [isEditMode, setIsEditMode] = useState(false)
    
    // Search and filter states
-   const [searchTerm, setSearchTerm] = useState("")
-   const [statusFilter, setStatusFilter] = useState("all")
+   const [searchTerm, setSearchTerm] = useState(initialData?.filters?.searchTerm ?? "")
+   const [statusFilter, setStatusFilter] = useState(initialData?.filters?.status ?? "all")
    
    // Pagination states
    const [currentPage, setCurrentPage] = useState(1)
@@ -374,11 +374,6 @@ export default function FacultiesLogic(){
          className: "text-right",
       },
    ]
-
-   // Initial load
-   useEffect(() => {
-      fetchFaculties()
-   }, [])
 
    return {
       // Data
