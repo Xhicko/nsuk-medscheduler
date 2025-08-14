@@ -14,7 +14,7 @@ import { Toaster } from 'react-hot-toast';
    const { user, error } = await getUserFromCookie()
 
    return (
-     <html lang="en" className={inter.variable} suppressHydrationWarning>
+  <html lang="en" className={`${inter.className} ${inter.variable}`} suppressHydrationWarning>
        <head>
          {/* DNS prefetch for faster connections */}
          <link rel="dns-prefetch" href="//fonts.googleapis.com" />

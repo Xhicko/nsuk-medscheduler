@@ -236,7 +236,7 @@ const NavigationContent = ({children}) =>{
                             <DropdownMenuItem 
                               key={item.title} 
                               onClick={item.title === 'Logout' ? logout : undefined}
-                              className={item.title === 'Logout' ? 'text-red-500' : ''}
+                              className={item.title === 'Logout' ? 'text-red-500 !cursor-pointer' : ''}
                             >
                               <item.icon className="w-4 h-4 mr-2" />
                               <span>{item.title}</span>

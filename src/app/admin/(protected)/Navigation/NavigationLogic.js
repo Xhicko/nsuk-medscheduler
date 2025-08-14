@@ -56,8 +56,6 @@ export default function NavigationLogic(){
    )
 
    const NavigationPathDropdown = useMemo(() => [
-      { title: 'Admin Management', icon: ShieldEllipsis ,  url: '/admin/admin-management'},
-      { title: 'Profile', icon: FileUser  ,  url: '/admin/profile'},
       { title: 'Logout',    icon: LogOut,   url: '/admin/logout'},
     ], [])
 

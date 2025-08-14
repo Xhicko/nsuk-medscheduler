@@ -5,6 +5,7 @@ import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
 import { CheckCircle, RotateCcw, Pencil, Trash2, BellRing, Filter, RefreshCcw, Search } from 'lucide-react'
+import { getApiErrorMessage } from '@/lib/api/client'
 
 export default function ResultLogic(initialData = null) {
   // Core data
@@ -43,8 +44,7 @@ export default function ResultLogic(initialData = null) {
       }
     } catch (error) {
       console.error('Error fetching faculties:', error)
-      const message = error?.response?.data?.error || error?.message || 'Failed to load faculties'
-      toast.error(message)
+  toast.error(getApiErrorMessage(error, 'Failed to load faculties'))
     } finally {
       setFacultiesLoading(false)
     }
@@ -63,8 +63,7 @@ export default function ResultLogic(initialData = null) {
       }
     } catch (error) {
       console.error('Error fetching departments:', error)
-      const message = error?.response?.data?.error || error?.message || 'Failed to load departments'
-      toast.error(message)
+  toast.error(getApiErrorMessage(error, 'Failed to load departments'))
     } finally {
       setLoadingDepartments(false)
     }
@@ -109,8 +108,7 @@ export default function ResultLogic(initialData = null) {
       }
     } catch (error) {
       console.error('Error fetching results:', error)
-      const message = error?.response?.data?.error || error?.message || 'Failed to fetch results'
-      toast.error(message)
+  toast.error(getApiErrorMessage(error, 'Failed to fetch results'))
       setResults([])
       setTotalResultsCount(0)
     } finally {
@@ -187,8 +185,7 @@ export default function ResultLogic(initialData = null) {
         toast.error(response?.data?.error || 'Failed to delete')
       }
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Failed to delete notification'
-      toast.error(message)
+  toast.error(getApiErrorMessage(error, 'Failed to delete notification'))
     } finally {
       setIsDeleting(false)
     }
@@ -220,8 +217,7 @@ export default function ResultLogic(initialData = null) {
         toast.error(response?.data?.error || 'Failed to notify')
       }
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Failed to notify student'
-      toast.error(message)
+  toast.error(getApiErrorMessage(error, 'Failed to notify student'))
     } finally {
       setIsNotifying(false)
     }
@@ -253,7 +249,7 @@ export default function ResultLogic(initialData = null) {
         toast.error(response?.data?.error || 'Failed to revert')
       }
     } catch (error) {
-      toast.error(error?.response?.data?.error || error?.message || 'Failed to revert')
+  toast.error(getApiErrorMessage(error, 'Failed to revert notification'))
     } finally {
       setIsUndoing(false)
     }

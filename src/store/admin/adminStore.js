@@ -10,6 +10,9 @@ export const useAdminStore = create(
         profile: null,
         loading: false,
         error: null,
+  // Pending admin creation (verification) state
+  pendingAdminId: null,
+  pendingAdminEmail: null,
 
         setProfile: (profile) => 
           set({ 
@@ -35,6 +38,12 @@ export const useAdminStore = create(
             loading: false
           }),
 
+        // Pending admin helpers
+        setPendingAdmin: (id, email) =>
+          set({ pendingAdminId: id || null, pendingAdminEmail: email || null }),
+        clearPendingAdmin: () =>
+          set({ pendingAdminId: null, pendingAdminEmail: null }),
+
         // Convenience getters
         getFullName: () => get().profile?.full_name,
         getEmail: () => get().profile?.email,
@@ -44,7 +53,11 @@ export const useAdminStore = create(
       }),
       {
         name: 'admin-store', 
-        partialize: (state) => ({ profile: state.profile }),
+        partialize: (state) => ({
+          profile: state.profile,
+          pendingAdminId: state.pendingAdminId,
+          pendingAdminEmail: state.pendingAdminEmail,
+        }),
       }
     )
   )

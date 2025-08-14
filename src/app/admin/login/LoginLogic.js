@@ -16,10 +16,10 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 const formSchema = z
   .object({
-    MedicalID: z
-      .string()
-      .min(1, { message: "Medical ID is required" })
-      .regex(/^[A-Za-z0-9]+$/, { message: "Medical ID must contain only alphanumeric characters" }),
+      MedicalID: z
+         .string()
+         .min(1, { message: "Medical ID is required" })
+         .regex(/^[A-Za-z0-9/]+$/, { message: "Medical ID may contain letters, numbers and  '/'" }),
     password: z
       .string()
       .min(8, { message: "Password must be at least 8 characters" })

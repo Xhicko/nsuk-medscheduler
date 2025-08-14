@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast' 
+import { getApiErrorMessage } from '@/lib/api/client'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
 export default function DepartmentsLogic(initialData){
@@ -75,11 +76,11 @@ export default function DepartmentsLogic(initialData){
             setDepartments([])
             setTotalDepartmentsCount(0)
          }
-      } catch (error) {
-         console.error('Error fetching departments:', error)
-         setDepartments([])
-         setTotalDepartmentsCount(0)
-         toast.error("Failed to fetch departments data")
+   } catch (error) {
+      console.error('Error fetching departments:', error)
+      setDepartments([])
+      setTotalDepartmentsCount(0)
+      toast.error(getApiErrorMessage(error, 'Failed to fetch departments data'))
       } finally {
          setLoading(false)
       }
@@ -96,10 +97,10 @@ export default function DepartmentsLogic(initialData){
          } else {
             setFacultiesData([])
          }
-      } catch (error) {
-         console.error('Error fetching faculties:', error)
-         setFacultiesData([])
-         toast.error("Failed to fetch faculties data")
+   } catch (error) {
+      console.error('Error fetching faculties:', error)
+      setFacultiesData([])
+      toast.error(getApiErrorMessage(error, 'Failed to fetch faculties data'))
       } finally {
          setFacultiesLoading(false)
       }
@@ -108,19 +109,22 @@ export default function DepartmentsLogic(initialData){
    // Delete department
    const handleDeleteDepartment = async (departmentId) => {
       setDeleteLoading(true)
+      let deletionSucceeded = false
       try {
          const response = await axios.delete(`${ADMIN_ENDPOINTS.DEPARTMENTS}?id=${departmentId}`)
          if(response.status === 200){
             toast.success("Department deleted successfully")
             fetchDepartments()
-            closeDeleteModal()
+            deletionSucceeded = true
          }
       } catch (error) {
          console.error('Error deleting department:', error)
-         const errorMessage = error.response?.data?.error || "Failed to delete department"
-         toast.error(errorMessage)
+         toast.error(getApiErrorMessage(error, 'Failed to delete department'))
       } finally {
          setDeleteLoading(false)
+         if (deletionSucceeded) {
+            closeDeleteModal()
+         }
       }
    }
 
@@ -335,10 +339,9 @@ export default function DepartmentsLogic(initialData){
             fetchFaculties()
             closeAddEditSheet()
          }
-      } catch (error) {
-         console.error('Error saving department:', error)
-         const errorMessage = error.response?.data?.error || `Failed to ${isEditMode ? 'update' : 'create'} department`
-         toast.error(errorMessage)
+   } catch (error) {
+      console.error('Error saving department:', error)
+      toast.error(getApiErrorMessage(error, `Failed to ${isEditMode ? 'update' : 'create'} department`))
       } finally {
          setSaveLoading(false)
       }

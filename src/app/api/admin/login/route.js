@@ -59,7 +59,10 @@ export async function POST(request) {
       )
     }
 
-    // Now authenticate with email and password
+  // Always clear any existing session first to force credential check
+  try { await supabase.auth.signOut() } catch (_) {}
+
+  // Now authenticate with email and password
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: userResponse.user.email,
       password: cleanPassword

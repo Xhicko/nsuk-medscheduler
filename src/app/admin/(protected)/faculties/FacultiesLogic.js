@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
+import { getApiErrorMessage } from '@/lib/api/client'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
 export default function FacultiesLogic(initialData){
@@ -49,11 +50,11 @@ export default function FacultiesLogic(initialData){
             setFaculties([])
             setTotalFacultiesCount(0)
          }
-      } catch (error) {
-         console.error('Error fetching faculties:', error)
-         setFaculties([])
-         setTotalFacultiesCount(0)
-         toast.error("Failed to fetch faculties data")
+   } catch (error) {
+      console.error('Error fetching faculties:', error)
+      setFaculties([])
+      setTotalFacultiesCount(0)
+      toast.error(getApiErrorMessage(error, 'Failed to fetch faculties data'))
       } finally {
          setLoading(false)
       }
@@ -62,19 +63,22 @@ export default function FacultiesLogic(initialData){
    // Delete faculty
    const handleDeleteFaculty = async (facultyId) => {
       setDeleteLoading(true)
+      let deletionSucceeded = false
       try {
          const response = await axios.delete(`${ADMIN_ENDPOINTS.FACULTIES}?id=${facultyId}`)
          if(response.status === 200){
             toast.success("Faculty deleted successfully")
             fetchFaculties()
-            closeDeleteModal()
+            deletionSucceeded = true
          }
       } catch (error) {
          console.error('Error deleting faculty:', error)
-         const errorMessage = error.response?.data?.error || "Failed to delete faculty"
-         toast.error(errorMessage)
+         toast.error(getApiErrorMessage(error, 'Failed to delete faculty'))
       } finally {
          setDeleteLoading(false)
+         if (deletionSucceeded) {
+            closeDeleteModal()
+         }
       }
    }
 

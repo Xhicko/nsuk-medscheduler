@@ -1,6 +1,5 @@
-'use server'
-
 import { NextResponse } from 'next/server'
+import { unauthorized, forbidden, methodNotAllowed, internalServerError } from '@/lib/api/responses'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { sendResultReady } from '@/lib/email'
@@ -12,37 +11,35 @@ export async function DELETE(request) { return handleRequest(request, 'DELETE') 
 
 async function handleRequest(request, method) {
   try {
-    const cookieStore = await cookies()
+    const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     // Auth
     const { data: { session }, error: sessErr } = await supabase.auth.getSession()
-    if (sessErr || !session) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+    if (sessErr || !session) return unauthorized()
     const role = session.user?.user_metadata?.role
-    if (role !== 'admin' && role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    if (role !== 'admin' && role !== 'superadmin') return forbidden()
 
     switch (method) {
       case 'GET':
         return await handleGetResults(request, supabase)
       case 'POST':
+        if (role !== 'superadmin') return forbidden()
         return await handleNotifyStudent(request, supabase)
       case 'PUT':
+        if (role !== 'superadmin') return forbidden()
         return await handleUpdateResult(request, supabase)
       case 'DELETE':
+        if (role !== 'superadmin') return forbidden()
         return await handleDeleteResult(request, supabase)
       default:
-        return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
+        return methodNotAllowed()
     }
   } catch (error) {
-    console.error('Students Results API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error in students_results route:', error)
+    return internalServerError()
   }
 }
-
 // GET: Fetch results notifications with pagination and filters
 async function handleGetResults(request, supabase) {
   try {

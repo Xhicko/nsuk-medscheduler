@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
+import { getApiErrorMessage } from '@/lib/api/client'
 import useDepartmentsStore from '@/store/admin/departmentsStore'
 import { Pencil, Trash2 } from 'lucide-react'
 
@@ -106,11 +107,11 @@ export default function StudentsLogic(initialData){
             setStudents([])
             setTotalStudentsCount(0)
          }
-      } catch (error) {
-         console.error('Error fetching students:', error)
-         setStudents([])
-         setTotalStudentsCount(0)
-         toast.error("Failed to fetch students data")
+   } catch (error) {
+      console.error('Error fetching students:', error)
+      setStudents([])
+      setTotalStudentsCount(0)
+      toast.error(getApiErrorMessage(error, 'Failed to fetch students data'))
       } finally {
          setLoading(false)
       }
@@ -119,20 +120,24 @@ export default function StudentsLogic(initialData){
    // Delete student
    const handleDeleteStudent = async (studentId) => {
       setDeleteLoading(true)
+      let deletionSucceeded = false
       try {
          const response = await axios.delete(`${ADMIN_ENDPOINTS.STUDENTS}?id=${studentId}`)
          if(response.status === 200){
             toast.success("Student deleted successfully")
             // Refresh with current filters and pagination
             fetchStudents(currentPage, searchTerm, facultyFilter, departmentFilter, statusFilter)
-            // Close modal only after successful deletion
-            closeDeleteModal()
+            deletionSucceeded = true
          }
       } catch (error) {
          console.error('Error deleting student:', error)
-         toast.error("Failed to delete student")
+         toast.error(getApiErrorMessage(error, 'Failed to delete student'))
       } finally {
          setDeleteLoading(false)
+         if (deletionSucceeded) {
+            // Close modal only after successful deletion
+            closeDeleteModal()
+         }
       }
    }
 

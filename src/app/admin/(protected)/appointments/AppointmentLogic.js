@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
+import { getApiErrorMessage } from '@/lib/api/client'
 import { CalendarPlus, CheckCircle, RotateCcw, Pencil, Trash2 } from 'lucide-react'
 
 export default function AppointmentLogic(initialData) {
@@ -141,8 +142,7 @@ export default function AppointmentLogic(initialData) {
       }
     } catch (error) {
       console.error('Error fetching appointments:', error)
-      const message = error?.response?.data?.error || error?.message || 'Failed to fetch appointments'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Failed to fetch appointments'))
       setAppointments([])
       setTotalAppointmentsCount(0)
     } finally {
@@ -247,8 +247,7 @@ export default function AppointmentLogic(initialData) {
   toast.error(response?.data?.error || response?.data?.message || 'Failed to schedule appointment')
       }
     } catch (error) {
-      const errorMessage = (error?.response?.data?.error) || error?.message || 'Failed to schedule appointment'
-      toast.error(errorMessage)
+      toast.error(getApiErrorMessage(error, 'Failed to schedule appointment'))
       console.error('Error scheduling appointment:', error)
     }
   }
@@ -282,8 +281,7 @@ export default function AppointmentLogic(initialData) {
   toast.error(response?.data?.error || response?.data?.message || 'Failed to undo appointment')
       }
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Failed to undo appointment'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Failed to undo appointment'))
     } finally {
       setIsUndoing(false)
     }
@@ -316,8 +314,7 @@ export default function AppointmentLogic(initialData) {
         toast.error(response?.data?.error || response?.data?.message || 'Failed to complete appointment')
       }
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Failed to complete appointment'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Failed to complete appointment'))
     } finally {
       setIsCompleting(false)
     }
@@ -349,8 +346,7 @@ export default function AppointmentLogic(initialData) {
         toast.error('Failed to delete appointment')
       }
     } catch (error) {
-      const message = (error?.response?.data?.error) || error?.message || 'Failed to delete appointment'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Failed to delete appointment'))
     } finally {
       setIsDeleting(false)
     }
@@ -572,8 +568,7 @@ export default function AppointmentLogic(initialData) {
         toast.error(response?.data?.error || response?.data?.message || 'Failed to reschedule appointment')
       }
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Failed to reschedule appointment'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Failed to reschedule appointment'))
     } finally {
       setLoadingAction(null)
     }
@@ -595,8 +590,7 @@ export default function AppointmentLogic(initialData) {
         toast.error(response?.data?.error || response?.data?.message || 'Failed to mark missed')
       }
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Failed to mark missed'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Failed to mark missed'))
     } finally {
       setLoadingAction(null)
     }
@@ -620,8 +614,7 @@ export default function AppointmentLogic(initialData) {
         toast.error(response?.data?.error || response?.data?.message || 'Failed to revert to pending')
       }
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Failed to revert to pending'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Failed to revert to pending'))
     } finally {
       setLoadingAction(null)
     }

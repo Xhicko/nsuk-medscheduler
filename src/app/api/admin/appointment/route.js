@@ -1,6 +1,7 @@
 'use server'
 
 import { NextResponse } from 'next/server'
+import { unauthorized, forbidden, methodNotAllowed, internalServerError } from '@/lib/api/responses'
 import { sendScheduleAppointment, sendAppointmentReverted, sendAppointmentMissed, sendAppointmentRescheduled } from '@/lib/email'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
@@ -28,30 +29,29 @@ async function handleRequest(request, method) {
 
     // Auth
     const { data: { session }, error: sessErr } = await supabase.auth.getSession()
-    if (sessErr || !session) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+  if (sessErr || !session) return unauthorized()
 
     const role = session.user?.user_metadata?.role
-    if (role !== 'admin' && role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  if (role !== 'admin' && role !== 'superadmin') return forbidden()
 
-    switch (method) {
+  switch (method) {
       case 'GET':
         return await handleGetAppointments(request, supabase)
       case 'POST':
-      return await handleCompleteAppointment(request, supabase)
+    if (role !== 'superadmin') return forbidden()
+    return await handleCompleteAppointment(request, supabase)
       case 'PUT':
+    if (role !== 'superadmin') return forbidden()
     return await handleUpdateAppointment(request, supabase)
       case 'DELETE':
-  return await handleDeleteAppointment(request, supabase)
+    if (role !== 'superadmin') return forbidden()
+    return await handleDeleteAppointment(request, supabase)
       default:
-        return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
+        return methodNotAllowed()
     }
   } catch (error) {
     console.error('Appointments API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return internalServerError()
   }
 }
 

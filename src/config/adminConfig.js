@@ -6,6 +6,8 @@ export const ADMIN_ENDPOINTS = {
   },
    DASHBOARD: `${BASE_URL}/dashboard`,
    STUDENTS: `${BASE_URL}/students`,
+  ADMIN_MANAGEMENT: `${BASE_URL}/admin_management`,
+  VERIFY_EMAIL: `${BASE_URL}/verify_email`,
    DEPARTMENTS: `${BASE_URL}/departments`,
    FACULTIES: `${BASE_URL}/faculties`,
    MEDICAL_FORMS: `${BASE_URL}/medical_forms`,

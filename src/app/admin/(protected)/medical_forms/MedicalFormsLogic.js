@@ -6,6 +6,7 @@ import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 import { toast } from 'react-hot-toast'
 // Direct API calls instead of using departmentsStore
 import { Pencil, Trash2, Eye } from 'lucide-react'
+import { getApiErrorMessage } from '@/lib/api/client'
 
 export default function MedicalFormsLogic(initialData) {
    // Normalize forms to the shape the table expects
@@ -73,9 +74,9 @@ export default function MedicalFormsLogic(initialData) {
             const verifiedFaculties = response.data.faculties.filter(faculty => faculty.status === 'verified')
             setFaculties(verifiedFaculties || [])
          }
-      } catch (error) {
-         console.error('Error fetching faculties:', error)
-         toast.error("Failed to load faculties. Please try again.")
+   } catch (error) {
+      console.error('Error fetching faculties:', error)
+      toast.error(getApiErrorMessage(error, 'Failed to load faculties'))
       } finally {
          setFacultiesLoading(false)
       }
@@ -106,9 +107,9 @@ export default function MedicalFormsLogic(initialData) {
                [facultyId]: facultyDepts
             }));
          }
-      } catch (error) {
-         console.error(`Error fetching departments for faculty ${facultyId}:`, error);
-         toast.error("Failed to load departments. Please try again.");
+   } catch (error) {
+      console.error(`Error fetching departments for faculty ${facultyId}:`, error);
+      toast.error(getApiErrorMessage(error, 'Failed to load departments'))
       } finally {
          setLoadingDepartments(false);
       }
@@ -165,11 +166,11 @@ export default function MedicalFormsLogic(initialData) {
             setMedicalForms([])
             setTotalMedicalFormsCount(0)
          }
-      } catch (error) {
-         console.error('Error fetching medical forms:', error)
-         setMedicalForms([])
-         setTotalMedicalFormsCount(0)
-         toast.error("Failed to fetch medical forms data")
+   } catch (error) {
+      console.error('Error fetching medical forms:', error)
+      setMedicalForms([])
+      setTotalMedicalFormsCount(0)
+      toast.error(getApiErrorMessage(error, 'Failed to fetch medical forms'))
       } finally {
          setLoading(false)
       }
@@ -188,16 +189,9 @@ export default function MedicalFormsLogic(initialData) {
             fetchMedicalForms(currentPage, searchTerm, facultyFilter, departmentFilter, completedFilter)
             deletionSucceeded = true
          }
-      } catch (error) {
-         console.error('Error deleting medical form:', error)
-         // Use server error message if available
-         if (error.response && error.response.data) {
-            toast.error(error.response.data.error || "Failed to delete medical form")
-         } else if (error.request) {
-            toast.error("No response from server. Please check your connection.")
-         } else {
-            toast.error("An error occurred while deleting the medical form")
-         }
+   } catch (error) {
+      console.error('Error deleting medical form:', error)
+      toast.error(getApiErrorMessage(error, 'Failed to delete medical form'))
       } finally {
          setDeleteLoading(false)
          // Close modal after loading state is cleared to ensure it actually closes
@@ -605,16 +599,9 @@ export default function MedicalFormsLogic(initialData) {
             fetchMedicalForms(currentPage, searchTerm, facultyFilter, departmentFilter, completedFilter)
             closeEditSheet()
          }
-      } catch (error) {
-         console.error('Error updating medical form:', error)
-         // Use server error message if available
-         if (error.response && error.response.data) {
-            toast.error(error.response.data.error || "Failed to update medical form")
-         } else if (error.request) {
-            toast.error("No response from server. Please check your connection.")
-         } else {
-            toast.error("An error occurred while updating the medical form")
-         }
+   } catch (error) {
+      console.error('Error updating medical form:', error)
+      toast.error(getApiErrorMessage(error, 'Failed to update medical form'))
       } finally {
          setSaveLoading(false)
       }
