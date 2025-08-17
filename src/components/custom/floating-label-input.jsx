@@ -4,6 +4,7 @@ import  React, { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 export const FloatingLabelInput = ({
   id,
@@ -21,6 +22,8 @@ export const FloatingLabelInput = ({
   onToggle = () => {},
   isValid = false,
   errors,
+  size = "md", // 'md' | 'sm' | 'responsive' (mobile-sm, sm+ md)
+  className: classNameProp,
   ...props
 }) => {
   // Internal state for uncontrolled inputs
@@ -49,6 +52,24 @@ export const FloatingLabelInput = ({
   
   const isDisabled = !!props?.disabled
 
+  // Size classes
+  const sizeClasses = (() => {
+    if (size === 'sm') return `${icon ? '!pl-10' : '!pl-3'} !pr-3 !pt-3 !h-11`
+    if (size === 'responsive') return `${icon ? '!pl-10' : '!pl-3'} !pr-3 !pt-3 !h-11 sm:!pt-4 sm:!h-14`
+    return `${icon ? '!pl-11' : '!pl-3'} !pr-3 !pt-4 !h-14`
+  })()
+
+  const mergedClassName = cn(
+    sizeClasses,
+    '!rounded !focus:ring-0 !focus:outline-none !focus:ring-offset-0 bg-white',
+    errors
+      ? '!border-red-500 !focus:border-red-500'
+      : isValid
+      ? '!border-[#0077B6] !focus:border-[#0077B6]'
+      : '!border-[#000000] !focus:border-[#000000]',
+    classNameProp
+  )
+
   return (
     <div className="relative mb-6">
       {icon && (
@@ -70,20 +91,12 @@ export const FloatingLabelInput = ({
           setIsFocused?.(false);
           register?.onBlur?.(e);
         }}
-        className={`!h-14 ${icon ? "!pl-11" : "!pl-3"} !pr-3 !pt-4 !rounded !focus:ring-0 !focus:outline-none !focus:ring-offset-0 bg-white
-          ${
-            errors
-              ? "!border-red-500 !focus:border-red-500"
-              : isValid
-                ? "!border-[#0077B6] !focus:border-[#0077B6]"
-                : "!border-[#000000] !focus:border-[#000000]"
-          }
-          ${isDisabled ? "opacity-60 cursor-not-allowed hover:bg-gray-50 disabled:hover:bg-gray-50" : ""}`}
+        className={mergedClassName + (isDisabled ? " opacity-60 cursor-not-allowed hover:bg-gray-50 disabled:hover:bg-gray-50" : "")}
         {...(register ? register : {})}
         {...props}
       />
 
-      <Label
+  <Label
         htmlFor={id}
         className={`absolute transform duration-200 ${icon ? "left-11" : "left-3"} px-1 bg-white rounded pointer-events-none
           ${isFocused || inputValue?.length > 0

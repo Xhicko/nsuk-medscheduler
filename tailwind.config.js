@@ -103,9 +103,11 @@ module.exports = {
                "50%": { transform: "scale(1.2)" },
              },
           },
-           screens: {
-            midlg: '900px', 
-            },
+		   screens: {
+			xs: '320px',
+			xsm: '360px',
+			midlg: '900px', 
+			},
    	}
    },
    plugins: [require("tailwindcss-animate"),

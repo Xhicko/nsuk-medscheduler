@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useAuthStore } from "@/store/authStore"
 import LoginSkeleton from "./LoginSkeleton"
-import LoginView from "./LoginView"
+import LoginView from "./Loginview"
 
 export default function LoginContainer() {
   const loading = useAuthStore(state => state.loading)

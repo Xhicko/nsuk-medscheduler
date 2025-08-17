@@ -16,8 +16,14 @@ const ADMIN_PROTECTED_PATHS  =
 ]
 const ADMIN_RESTRICTED_PATHS = ['/admin/change-password', '/admin/users']
 
-const STUDENT_PUBLIC_PATHS    = ['/student/login', '/student/register']
-const STUDENT_PROTECTED_PATHS = ['/student/dashboard']
+const STUDENT_PUBLIC_PATHS    = ['/student/login']
+const STUDENT_PROTECTED_PATHS = 
+[
+   '/student/dashboard',
+   '/student/medical-forms',
+   '/student/notifications',
+
+]
 
 export const config = {
   matcher: [
