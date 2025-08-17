@@ -89,6 +89,37 @@ export default function StudentHeader({ student, loading }) {
     router.push("/student/medical-forms")
   }
 
+  // Helper function to check if a menu item is active
+  const isActiveMenuItem = (url) => {
+    return pathname === url
+  }
+
+  // Helper function to get menu item classes
+  const getMenuItemClasses = (url, isLogout = false) => {
+    const baseClasses = "cursor-pointer min-h-touch"
+    
+    if (isLogout) {
+      return `${baseClasses} text-white focus:text-destructive bg-red-700`
+    }
+    
+    if (isActiveMenuItem(url)) {
+      return `${baseClasses} bg-[#0077B6] text-white focus:bg-[#0077B6] focus:text-white`
+    }
+    
+    return baseClasses
+  }
+
+  // Helper function to get icon classes
+  const getIconClasses = (url) => {
+    const baseClasses = "mr-2 h-4 w-4"
+    
+    if (isActiveMenuItem(url)) {
+      return `${baseClasses} text-white`
+    }
+    
+    return baseClasses
+  }
+
   if (loading) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-[#0077B6]">
@@ -178,43 +209,51 @@ export default function StudentHeader({ student, loading }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
-        {student && (
+                {student && (
                   <>
                     <div className="flex flex-col space-y-1 p-2">
                         <p className="text-sm font-medium leading-none">{displayName}</p>
                         <p className="text-xs leading-none text-muted-foreground">{displayEmail}</p>
                     </div>
-                    <DropdownMenuSeparator  className="bg-gray-300"/>
+                    <DropdownMenuSeparator className="bg-gray-300"/>
                   </>
                 )}
 
                 <DropdownMenuItem
                   onClick={() => router.push('/student/dashboard')}
                   onMouseEnter={prefetchOnHover('/student/dashboard')}
-                  className="cursor-pointer min-h-touch"
+                  className={getMenuItemClasses('/student/dashboard')}
                 >
-                   <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <LayoutDashboard className={getIconClasses('/student/dashboard')} />
                   <span>Dashboard</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={handleNotifications} onMouseEnter={prefetchOnHover('/student/notifications')} className="cursor-pointer min-h-touch">
-                  <Bell className="mr-2 h-4 w-4" />
+                <DropdownMenuItem 
+                  onClick={handleNotifications} 
+                  onMouseEnter={prefetchOnHover('/student/notifications')} 
+                  className={getMenuItemClasses('/student/notifications')}
+                >
+                  <Bell className={getIconClasses('/student/notifications')} />
                   <span>Notifications</span>
                   <Badge variant="secondary" className="ml-auto bg-gray-200 rounded-full">
                     {notificationCount}
                   </Badge>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={handleMedicalForms} onMouseEnter={prefetchOnHover('/student/medical-forms')} className="cursor-pointer min-h-touch">
-                  <ClipboardList className="mr-2 h-4 w-4" />
+                <DropdownMenuItem 
+                  onClick={handleMedicalForms} 
+                  onMouseEnter={prefetchOnHover('/student/medical-forms')} 
+                  className={getMenuItemClasses('/student/medical-forms')}
+                >
+                  <ClipboardList className={getIconClasses('/student/medical-forms')} />
                   <span>Medical Forms</span>
                 </DropdownMenuItem>
 
-                  <DropdownMenuSeparator  className="bg-gray-300"/>
+                <DropdownMenuSeparator className="bg-gray-300"/>
 
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="cursor-pointer text-white focus:text-destructive min-h-touch bg-red-700"
+                  className={getMenuItemClasses('', true)}
                   disabled={isLoggingOut}
                 >
                   <LogOut className="mr-2 h-4 w-4 text-white" />
