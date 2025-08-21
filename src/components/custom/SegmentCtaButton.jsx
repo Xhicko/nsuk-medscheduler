@@ -19,7 +19,7 @@ export default function SegmentCtaButton({ className }) {
   }
 
   return (
-    <Button asChild className={`h-11 rounded-full bg-[#0077B6] hover:bg-[#005a8a] text-white px-6 ${className || ''}`}>
+    <Button asChild className={`h-11 rounded-full border-2 border-white bg-[#0077B6] hover:bg-[#005a8a] text-white px-6 ${className || ''}`}>
       <Link href={href} aria-label={label}>{label}</Link>
     </Button>
   )

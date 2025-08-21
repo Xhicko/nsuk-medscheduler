@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge"
 import { Bell, ClipboardList, LogOut, LayoutDashboard } from "lucide-react"
 import Logo from "@/svg/NSUK_LOGO.svg"
 import { useStudentLogout } from "@/hooks/student/useStudentLogout"
+import { getStepIdByIndex } from '@/config/stepsConfig'
 
 export default function StudentHeader({ student, loading }) {
   const pathname = usePathname()
@@ -69,15 +70,11 @@ export default function StudentHeader({ student, loading }) {
     return titleize(first)
   }
 
-  const prefetchOnHover = (url) => () => {
-    if (!url || url === '#') return
-    try {
-      const link = document.createElement('link')
-      link.rel = 'prefetch'
-      link.href = url
-      document.head.appendChild(link)
-    } catch {}
-  }
+  // Derive canonical medical-forms steps path from student's stored index (server SOT)
+  const studentCurrentStepIndex = student?.medicalFormStatus?.current_step ?? student?.medical_form_status?.current_step ?? 0
+  const canonicalMedicalStepId = getStepIdByIndex(studentCurrentStepIndex)
+  const medicalFormsPath = `/student/medical-forms/steps/${canonicalMedicalStepId}`
+
 
   const handleLogout = () => logout('/student/login')
 
@@ -86,12 +83,13 @@ export default function StudentHeader({ student, loading }) {
   }
 
   const handleMedicalForms = () => {
-    router.push("/student/medical-forms")
+  router.push(medicalFormsPath)
   }
 
   // Helper function to check if a menu item is active
   const isActiveMenuItem = (url) => {
-    return pathname === url
+  if (url === '/student/medical-forms') return pathname?.startsWith('/student/medical-forms')
+  return pathname === url
   }
 
   // Helper function to get menu item classes
@@ -127,15 +125,15 @@ export default function StudentHeader({ student, loading }) {
           <div className="flex h-14 xsm:h-16 items-center justify-between">
             {/* Left side - Logo and Breadcrumb */}
             <div className="flex items-center space-x-2 xsm:space-x-3 sm:space-x-4">
-              <Skeleton className="h-7 w-7 xsm:h-8 xsm:w-8 sm:h-9 sm:w-9 rounded-full" />
+              <Skeleton className="h-7 w-7 xsm:h-8 xsm:w-8 sm:h-9 sm:w-9 rounded-full bg-white" />
               {/* Mobile: compact title skeleton */}
-              <Skeleton className="block sm:hidden h-4 w-24 xsm:w-32 rounded" />
+              <Skeleton className="block sm:hidden h-4 w-24 ml-3 xsm:w-32 rounded bg-white" />
               {/* sm+: full breadcrumb skeleton */}
-              <Skeleton className="hidden sm:block h-4 w-48 rounded" />
+              <Skeleton className="hidden sm:block h-4 w-48 ml-3 rounded bg-white" />
             </div>
             {/* Right side - Avatar skeleton */}
             <div className="flex items-center space-x-2">
-              <Skeleton className="h-9 w-9 xsm:h-10 xsm:w-10 rounded-full" />
+              <Skeleton className="h-9 w-9 xsm:h-10 xsm:w-10 rounded-full bg-white" />
             </div>
           </div>
         </div>
@@ -178,7 +176,6 @@ export default function StudentHeader({ student, loading }) {
                     <BreadcrumbLink
                       href="/student/dashboard"
                       className="font-bold cursor-pointer text-white hover:text-white/90"
-                      onMouseEnter={prefetchOnHover('/student/dashboard')}
                     >
                       NSUK Medical Schedulizer
                     </BreadcrumbLink>
@@ -221,7 +218,6 @@ export default function StudentHeader({ student, loading }) {
 
                 <DropdownMenuItem
                   onClick={() => router.push('/student/dashboard')}
-                  onMouseEnter={prefetchOnHover('/student/dashboard')}
                   className={getMenuItemClasses('/student/dashboard')}
                 >
                   <LayoutDashboard className={getIconClasses('/student/dashboard')} />
@@ -230,7 +226,6 @@ export default function StudentHeader({ student, loading }) {
 
                 <DropdownMenuItem 
                   onClick={handleNotifications} 
-                  onMouseEnter={prefetchOnHover('/student/notifications')} 
                   className={getMenuItemClasses('/student/notifications')}
                 >
                   <Bell className={getIconClasses('/student/notifications')} />
@@ -242,7 +237,6 @@ export default function StudentHeader({ student, loading }) {
 
                 <DropdownMenuItem 
                   onClick={handleMedicalForms} 
-                  onMouseEnter={prefetchOnHover('/student/medical-forms')} 
                   className={getMenuItemClasses('/student/medical-forms')}
                 >
                   <ClipboardList className={getIconClasses('/student/medical-forms')} />

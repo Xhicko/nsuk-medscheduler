@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { getStepIdByIndex } from '@/config/stepsConfig'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Clock, CheckCircle, AlertCircle } from "lucide-react"
@@ -38,17 +39,17 @@ function MedicalFormStatus({ status }) {
   const isCompletedStatus = ["completed", "complete", "done", "finished"].includes(normalizedStatus)
 
   const statusConfig = isCompletedStatus
-    ? { label: "Complete", color: "text-green-600", bgColor: "bg-green-100", Icon: CheckCircle }
+    ? { label: "Complete", color: "text-green-900", bgColor: "bg-green-300", Icon: CheckCircle }
     : isInProgressStatus
-    ? { label: "In Progress", color: "text-orange-600", bgColor: "bg-orange-100", Icon: AlertCircle }
-    : { label: "Not Started", color: "text-gray-900", bgColor: "bg-gray-400", Icon: Clock }
+    ? { label: "In Progress", color: "text-orange-900", bgColor: "bg-orange-300", Icon: AlertCircle }
+    : { label: "Not Started", color: "text-gray-900", bgColor: "bg-gray-300", Icon: Clock }
 
   const progressPercentage = typeof status.progress_percentage === 'number' ? status.progress_percentage : 0
   const currentStep = typeof status.current_step === 'number' ? status.current_step : 0
   const totalSteps = typeof status.total_steps === 'number' ? status.total_steps : undefined
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <label className="text-sm font-medium text-white">Medical Form Status</label>
       <div className={`p-3 rounded-md ${statusConfig.bgColor}`}>
         <div className="flex items-center justify-between">
@@ -93,13 +94,17 @@ export default function StudentProfileCard({ student }) {
   const router = useRouter()
   const formattedGender = student?.gender ? student.gender.charAt(0).toUpperCase() + student.gender.slice(1) : ''
 
+  const studentCurrentStepIndex = student?.medicalFormStatus?.current_step ?? student?.medical_form_status?.current_step ?? 0
+  const canonicalMedicalStepId = getStepIdByIndex(studentCurrentStepIndex)
+  const medicalFormsPath = `/student/medical-forms/steps/${canonicalMedicalStepId}`
+
   return (
-    <Card className="w-full bg-[#0077B6]">
-      <CardHeader className="pb-4">
+    <Card className="w-full bg-[#0077B6] border-none">
+      <CardHeader>
         <CardTitle className="text-white text-xl xs:text-lg font-semibold">Student Profile</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 xs:gap-3">
+      <CardContent className="space-y-2">
+        <div className="grid gap-3 xs:gap-2">
           <ProfileField label="Full Name" value={student?.fullName} fieldKey="full-name" />
 
           {student?.gender && (
@@ -117,9 +122,9 @@ export default function StudentProfileCard({ student }) {
           <MedicalFormStatus status={student?.medicalFormStatus} />
         </div>
 
-        <div className="mt-6 pt-4 border-t">
+        <div className="mt-6 pt-4 border-t border-white">
           <Button
-            onClick={() => router.push('/student/medical_forms')}
+            onClick={() => router.push(medicalFormsPath)}
             className="cursor-pointer w-full bg-white hover:bg-white/90  text-[#0077B6] hover:text-[#0077B6]/90"
             size="lg"
           >
@@ -128,7 +133,7 @@ export default function StudentProfileCard({ student }) {
           </Button>
         </div>
 
-        <div className="mt-4 pt-4 border-t">
+        <div className="mt-4 pt-4 border-t border-white">
           <p className="text-xs text-white">
             Profile information is read-only. Contact administration for updates.
           </p>

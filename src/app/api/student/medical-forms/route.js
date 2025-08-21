@@ -52,7 +52,6 @@ const formatDateToISO = (rawValue) => {
 };
 
 /* -------------------- Section schemas (zod) -------------------- */
-/* Only fields belonging to each section are accepted; types coerced for safety */
 const historySectionSchema = z.object({
   general_health: z.enum(['Good', 'Fair', 'Poor']).optional(),
   inpatient_admit: z.boolean().optional().transform((v) => parseBoolean(v) ?? false),
@@ -194,13 +193,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    // Determine current_step (default to 0 if not present)
-    const currentStatus = studentRow.medical_form_status || {};
-    const currentStep = Number(currentStatus.current_step ?? 0);
-
-    // Determine total steps by gender: female = 11, male = 10
-    const genderValue = (studentRow.gender || '').toLowerCase();
-    const totalSteps = genderValue === 'female' ? 11 : 10;
 
     // Enforce not completed
     if (Number(currentStatus.current_step ?? 0) >= totalSteps || currentStatus?.status === 'completed') {
@@ -232,10 +224,43 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No valid fields provided for this section' }, { status: 400 });
     }
 
-    // Parse and coerce
+    // Normalize payload before validation:
+    // - convert null/empty strings -> undefined (omit)
+    // - coerce boolean-like strings to booleans
+    // - coerce integer-like strings for numeric fields
+    const normalizedPayload = {};
+    for (const [fieldName, fieldValue] of Object.entries(payloadToValidate)) {
+      // Treat explicit nulls and empty strings as absent (undefined)
+      if (fieldValue === null) continue;
+      if (typeof fieldValue === 'string' && fieldValue.trim() === '') continue;
+
+      // Coerce boolean-like strings ("true", "false", "1", "0", "yes", "no")
+      if (typeof fieldValue === 'string') {
+        const maybeBool = parseBoolean(fieldValue);
+        if (maybeBool !== undefined) {
+          normalizedPayload[fieldName] = maybeBool;
+          continue;
+        }
+      }
+
+      // Coerce integer-like values for fields that look numeric
+      if (typeof fieldValue === 'string' || typeof fieldValue === 'number') {
+        const maybeInt = parseInteger(fieldValue);
+        // Heuristics: field names containing 'days', 'duration', 'qty', or ending with '_days' likely expect integers
+        if (maybeInt !== undefined && /(days|duration|qty|_days|_qty)/i.test(fieldName)) {
+          normalizedPayload[fieldName] = maybeInt;
+          continue;
+        }
+      }
+
+      // Otherwise keep as-is (strings will be transformed by zod where needed)
+      normalizedPayload[fieldName] = fieldValue;
+    }
+
+    // Parse and coerce using normalized payload
     let validatedSectionPayload;
     try {
-      validatedSectionPayload = sectionSchema.partial().parse(payloadToValidate);
+      validatedSectionPayload = sectionSchema.partial().parse(normalizedPayload);
     } catch (validationError) {
       const validationIssues = (validationError?.errors || []).map((issue) => `${issue.path.join('.')}: ${issue.message}`);
       return NextResponse.json({ error: 'Validation failed', issues: validationIssues }, { status: 400 });

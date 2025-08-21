@@ -13,7 +13,7 @@ export default function SegmentOtherButton({ className }) {
   const label = isStudent ? 'Admin Login' : 'Student Login'
 
   return (
-    <Button asChild variant="outline" className={`h-11 rounded-full border-white text-[#0077B6] hover:bg-white/80 hover:text-[#0077B6] px-6 ${className || ''}`}>
+    <Button asChild variant="outline" className={`h-11 rounded-full border-white bg-white text-[#0077B6] hover:bg-white/80 hover:text-[#0077B6] px-6 ${className || ''}`}>
       <Link href={href} aria-label={label}>{label}</Link>
     </Button>
   )

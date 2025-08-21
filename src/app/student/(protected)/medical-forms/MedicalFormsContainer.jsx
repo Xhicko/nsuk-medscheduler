@@ -1,17 +1,18 @@
 "use client"
-
-import {useEffect} from 'react'
-import { useStudentDashboardStore } from '@/store/Client/studentDashboardStore'
 import MedicalFormsView from './MedicalFormsView'
 import { useAuthStore } from '@/store/authStore'
 
-export default function MedicalFormsContainer({ initialData }) {
+export default function MedicalFormsContainer({ initialData, initialStep, visibleStepIds, submitSection }) {
   const loading = useAuthStore(state => state.loading)
   const initialized = useAuthStore(state => state.initialized)
   const authInitialized = initialized && !loading
-  const storeData = useStudentDashboardStore(state => state.data)
-  const student = storeData || initialData || null
+  const student = initialData || null
  
-
-  return <MedicalFormsView  initialData={student}  loading={!authInitialized || !student} />
+  return <MedicalFormsView  
+            initialData={student} 
+            initialStep={initialStep} 
+            visibleStepIds={visibleStepIds}
+            loading={!authInitialized || !student}
+            submitSection={submitSection}
+         />
 }
