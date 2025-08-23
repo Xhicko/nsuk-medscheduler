@@ -53,14 +53,13 @@ export const MedicalFormsLogic = (initialData, visibleStepIds) => {
 
 
       // Success - show toast first
-      toast.success(`Section "${getSectionTitle(sectionId)}" saved successfully!`)
+      toast.success(`${getSectionTitle(sectionId)} saved successfully!`)
       
       // Mark this step as saved (read-only)
       setSavedSteps(prev => new Set([...prev, sectionId]))
 
       // Check if form is completed
       if (result.completed) {
-        toast.success('Medical form completed successfully!')
         router.push('/student/dashboard')
         return
       }
@@ -114,13 +113,8 @@ export const MedicalFormsLogic = (initialData, visibleStepIds) => {
 
   // Check if step is saved/read-only
   const isStepReadOnly = (stepId) => {
-    if (!initialData?.medicalFormStatus) return false
-    
-    const currentStep = initialData.medicalFormStatus.current_step ?? 0
-    const stepIndex = visibleStepIds.indexOf(stepId)
-    
-    // Step is read-only if it's before current step (already completed)
-    return stepIndex < currentStep || savedSteps.has(stepId)
+     // Only read-only if saved in current session
+    return savedSteps.has(stepId)
   }
 
   // Validate step access
@@ -130,8 +124,8 @@ export const MedicalFormsLogic = (initialData, visibleStepIds) => {
     const currentStep = initialData?.medicalFormStatus?.current_step ?? 0
     const stepIndex = visibleStepIds.indexOf(stepId)
     
-    // Can only access current step or previous steps
-    return stepIndex <= currentStep
+    // Can only access current step that is not saved 
+    return stepIndex === currentStep
   }
 
   return {

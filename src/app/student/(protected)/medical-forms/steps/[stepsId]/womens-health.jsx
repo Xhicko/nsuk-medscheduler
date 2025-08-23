@@ -30,10 +30,10 @@ const WomensHealth = forwardRef(function WomensHealth({ formData = {}, onFormCha
     reset({
       menses_regular: formData.menses_regular ?? undefined,
       menses_painful: formData.menses_painful ?? undefined,
-      menses_duration_days: formData.menses_duration_days ?? '',
-      last_period_date: formData.last_period_date ?? '',
+      menses_duration_days: formData.menses_duration_days ?? undefined,
+      last_period_date: formData.last_period_date ?? undefined,
       breast_sexual_disease: formData.breast_sexual_disease ?? undefined,
-      breast_sexual_details: formData.breast_sexual_details ?? '',
+      breast_sexual_details: formData.breast_sexual_details ?? undefined,
     })
   }, [formData, reset])
 
@@ -96,8 +96,8 @@ const WomensHealth = forwardRef(function WomensHealth({ formData = {}, onFormCha
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FloatingLabelInput id="menses_duration_days" label="Duration (days)" type="number" register={register('menses_duration_days')} watchedValue={watch('menses_duration_days')} errors={errors.menses_duration_days} isFocused={false} setIsFocused={() => {}} disabled={readOnly} />
-              <FloatingLabelInput id="last_period_date" label="Last period date" type="date" register={register('last_period_date')} watchedValue={watch('last_period_date')} errors={errors.last_period_date} isFocused={false} setIsFocused={() => {}} disabled={readOnly} />
+              <FloatingLabelInput id="menses_duration_days" label="Duration (days)" type="number" register={register('menses_duration_days', { valueAsNumber: true })} watchedValue={watch('menses_duration_days') ?? ''} errors={errors.menses_duration_days} isFocused={false} setIsFocused={() => {}} disabled={readOnly} />
+              <FloatingLabelInput id="last_period_date" label="Last period date" type="date" register={register('last_period_date')} watchedValue={watch('last_period_date') ?? ''} errors={errors.last_period_date} isFocused={false} setIsFocused={() => {}} disabled={readOnly} />
             </div>
           </div>
         </SectionCard>

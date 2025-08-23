@@ -51,7 +51,7 @@ export default async function StepPage({ params }) {
 
   // If user is trying to access a step beyond their current progress
   const requestedStepIndex = visibleStepIds.indexOf(stepsId)
-  if (requestedStepIndex > currentStepIndex) {
+  if (requestedStepIndex !== currentStepIndex) {
     return redirect(`/student/medical-forms/steps/${canonicalStepId}`)
   }
   

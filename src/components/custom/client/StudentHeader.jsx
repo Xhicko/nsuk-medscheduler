@@ -75,6 +75,9 @@ export default function StudentHeader({ student, loading }) {
   const canonicalMedicalStepId = getStepIdByIndex(studentCurrentStepIndex)
   const medicalFormsPath = `/student/medical-forms/steps/${canonicalMedicalStepId}`
 
+  // Determine if medical form is completed
+  const medicalStatusFlag = student?.medicalFormStatus?.status
+  const isMedicalCompleted = medicalStatusFlag === "completed"
 
   const handleLogout = () => logout('/student/login')
 
@@ -83,7 +86,8 @@ export default function StudentHeader({ student, loading }) {
   }
 
   const handleMedicalForms = () => {
-  router.push(medicalFormsPath)
+   if(isMedicalCompleted) return
+   router.push(medicalFormsPath)
   }
 
   // Helper function to check if a menu item is active
@@ -93,11 +97,15 @@ export default function StudentHeader({ student, loading }) {
   }
 
   // Helper function to get menu item classes
-  const getMenuItemClasses = (url, isLogout = false) => {
+  const getMenuItemClasses = (url, isLogout = false, isDisabled = false) => {
     const baseClasses = "cursor-pointer min-h-touch"
     
     if (isLogout) {
-      return `${baseClasses} text-white focus:text-destructive bg-red-700`
+      return `${baseClasses} text-white hover:!text-white bg-red-800 hover:!bg-red-700`
+    }
+
+    if (isDisabled) {
+      return `${baseClasses} !cursor-not-allowed opacity-60 bg-gray-100 text-gray-600`
     }
     
     if (isActiveMenuItem(url)) {
@@ -108,8 +116,12 @@ export default function StudentHeader({ student, loading }) {
   }
 
   // Helper function to get icon classes
-  const getIconClasses = (url) => {
+  const getIconClasses = (url, isDisabled = false) => {
     const baseClasses = "mr-2 h-4 w-4"
+
+     if (isDisabled) {
+      return `${baseClasses} text-gray-600`
+    }
     
     if (isActiveMenuItem(url)) {
       return `${baseClasses} text-white`
@@ -237,9 +249,11 @@ export default function StudentHeader({ student, loading }) {
 
                 <DropdownMenuItem 
                   onClick={handleMedicalForms} 
-                  className={getMenuItemClasses('/student/medical-forms')}
+                  disabled={isMedicalCompleted}
+                  aria-disabled={isMedicalCompleted}
+                  className={getMenuItemClasses('/student/medical-forms', false, isMedicalCompleted)}
                 >
-                  <ClipboardList className={getIconClasses('/student/medical-forms')} />
+                  <ClipboardList className={getIconClasses('/student/medical-forms', isMedicalCompleted)} />
                   <span>Medical Forms</span>
                 </DropdownMenuItem>
 

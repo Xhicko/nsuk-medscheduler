@@ -98,6 +98,15 @@ export default function StudentProfileCard({ student }) {
   const canonicalMedicalStepId = getStepIdByIndex(studentCurrentStepIndex)
   const medicalFormsPath = `/student/medical-forms/steps/${canonicalMedicalStepId}`
 
+    // Determine if medical form is completed
+  const medicalStatusFlag = student?.medicalFormStatus?.status
+  const isMedicalCompleted = medicalStatusFlag === "completed"
+
+    const handleFillMedicalForm = () => {
+    if (isMedicalCompleted) return
+    router.push(medicalFormsPath)
+  }
+
   return (
     <Card className="w-full bg-[#0077B6] border-none">
       <CardHeader>
@@ -124,11 +133,17 @@ export default function StudentProfileCard({ student }) {
 
         <div className="mt-6 pt-4 border-t border-white">
           <Button
-            onClick={() => router.push(medicalFormsPath)}
-            className="cursor-pointer w-full bg-white hover:bg-white/90  text-[#0077B6] hover:text-[#0077B6]/90"
+            onClick={handleFillMedicalForm}
+            disabled={isMedicalCompleted}
+            aria-disabled={isMedicalCompleted}
+            className={`cursor-pointer w-full ${
+              isMedicalCompleted
+                ? "bg-gray-900 text-gray-600 cursor-not-allowed"
+                : "bg-white hover:bg-white/90 text-[#0077B6] hover:text-[#0077B6]/90"
+            }`}
             size="lg"
           >
-            <FileText className="h-5 w-5 mr-2" />
+            <FileText className={`h-5 w-5 mr-2 ${isMedicalCompleted ? 'text-gray-600' : ''}`} />            
             Fill Medical Form
           </Button>
         </div>

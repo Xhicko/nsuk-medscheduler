@@ -132,8 +132,6 @@ export async function POST(request) {
       normalizedPayload[fieldName] = fieldValue;
     }
 
-    console.log("Normalized Payload:", normalizedPayload);
-
     // Call the RPC function - it handles all validation, dependency rules, and business logic
     const { data: rpcResult, error: rpcError } = await supabaseClient.rpc('submit_medical_section', {
       p_student_id: studentRow.id,
