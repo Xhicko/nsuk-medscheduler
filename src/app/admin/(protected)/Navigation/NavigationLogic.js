@@ -11,7 +11,6 @@ import {
    CalendarSync,
    ShieldEllipsis,
    LogOut,  
-   FileUser   
  } from 'lucide-react'
  import { Skeleton } from '@/components/ui/skeleton'
  import { useAuthStore } from '@/store/authStore'

@@ -1,6 +1,5 @@
 // app/student/(protected)/medical-forms/step/[stepId]/page.tsx (server)
 import MedicalFormsContainer from '../../MedicalFormsContainer'
-import { submitSection } from './actions'
 import { getServerSupabase } from '@/lib/supabaseServer'
 import {FORM_STEP_IDS, getStepIdByIndex} from '@/config/stepsConfig'
 import { redirect } from 'next/navigation'
@@ -9,7 +8,6 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic' 
 
 export default async function StepPage({ params }) {
-  // Note: folder is [stepsId] so the param key is `stepsId`.
   const { stepsId } = await params
 
   const supabase = await getServerSupabase()
@@ -37,28 +35,37 @@ export default async function StepPage({ params }) {
       ? FORM_STEP_IDS.filter(id => id !== 'womens-health')
       : [...FORM_STEP_IDS]
 
-  // canonical fallback using index stored in DB
-  const canonicalStepId = getStepIdByIndex(studentRow.medical_form_status?.current_step ?? 0)
-  // if canonical is not visible (e.g., womens-health on a male), pick the first visible
-  const canonicalVisible = visibleStepIds.includes(canonicalStepId) ? canonicalStepId : visibleStepIds[0]
+ // Get current step from medical_form_status and map it to visible steps
+  const currentStepIndex = Math.min(
+    studentRow.medical_form_status?.current_step ?? 0,
+    visibleStepIds.length - 1
+  )
   
-  // Use the correct param key when validating visibility
+  // Canonical step must come from visible steps array.
+  const canonicalStepId = visibleStepIds[currentStepIndex]
+  
+   // If requested step is not in visible steps or user is trying to access wrong step
   if (!stepsId || !visibleStepIds.includes(stepsId)) {
-    // Redirect to canonical step (keeps URL consistent and server is SOT)
-    return redirect(`/student/medical-forms/steps/${canonicalVisible}`)
+    return redirect(`/student/medical-forms/steps/${canonicalStepId}`)
   }
+
+  // If user is trying to access a step beyond their current progress
+  const requestedStepIndex = visibleStepIds.indexOf(stepsId)
+  if (requestedStepIndex > currentStepIndex) {
+    return redirect(`/student/medical-forms/steps/${canonicalStepId}`)
+  }
+  
   const initialData = {
     id: studentRow.id,
     fullName: studentRow.full_name,
     email: studentRow.institutional_email,
     gender: studentRow.gender,
-    medicalFormStatus: studentRow.medical_form_status,
+    medicalFormStatus: {
+      ...studentRow.medical_form_status,
+      total_steps: visibleStepIds.length 
+    },
   }
 
-  // Optionally: validate stepId against visible steps computed on server
-  // If invalid, you can redirect back to canonical step
-  // compute visibleSteps server-side (e.g., remove womens-health for males)
-  // if (!visible) redirect to canonical
 
-  return <MedicalFormsContainer initialData={initialData} initialStep={stepsId} visibleStepIds={visibleStepIds} submitSection={submitSection} />
+  return <MedicalFormsContainer initialData={initialData} initialStep={stepsId} visibleStepIds={visibleStepIds} />
 }

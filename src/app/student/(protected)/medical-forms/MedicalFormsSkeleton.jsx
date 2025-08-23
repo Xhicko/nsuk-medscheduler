@@ -20,9 +20,7 @@ export default function MedicalFormsSkeleton() {
             <div className="pt-1 mb-2">
               <Skeleton className="w-full h-2 rounded bg-white " />
             </div>
-            <p className="text-xs text-center">
               <Skeleton className="w-48 h-4 mx-auto bg-white" />
-            </p>
           </div>
 
           {/* three example section skeletons */}

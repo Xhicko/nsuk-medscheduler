@@ -2,7 +2,7 @@
 import MedicalFormsView from './MedicalFormsView'
 import { useAuthStore } from '@/store/authStore'
 
-export default function MedicalFormsContainer({ initialData, initialStep, visibleStepIds, submitSection }) {
+export default function MedicalFormsContainer({ initialData, initialStep, visibleStepIds }) {
   const loading = useAuthStore(state => state.loading)
   const initialized = useAuthStore(state => state.initialized)
   const authInitialized = initialized && !loading
@@ -13,6 +13,5 @@ export default function MedicalFormsContainer({ initialData, initialStep, visibl
             initialStep={initialStep} 
             visibleStepIds={visibleStepIds}
             loading={!authInitialized || !student}
-            submitSection={submitSection}
          />
 }

@@ -82,8 +82,6 @@ export default function LoginLogic() {
                password:data.password
             })
             if(response.status === 200){
-                console.log('Response Data:', response.data)
-                console.log('Profile Data:', response.data.profile)
                 // Create Supabase client - this will automatically handle cookies
                 const supabase = createClientComponentClient()
                 if(response.data.session){
@@ -124,12 +122,10 @@ export default function LoginLogic() {
                 
                 // Pre-fetch dashboard data before navigation
                 try {
-                  console.log('Pre-fetching dashboard data...')
                   const dashboardResponse = await axios.get(ADMIN_ENDPOINTS.DASHBOARD)
                   
                   // Store dashboard data in the dashboard store
                   setDashboardData(dashboardResponse.data)
-                  console.log('Dashboard data pre-fetched and stored:', dashboardResponse.data)
                 } 
                 catch (dashboardError) {
                   console.error('Dashboard pre-fetch failed:', dashboardError)

@@ -5,18 +5,18 @@ import RouterProgressBar from "@/components/custom/RouterProgressBar"
 import useDepartmentsStore from '@/store/admin/departmentsStore'
 
 // Immediate invocation to trigger department loading without useEffect
-const initializeDepartments = (() => {
-  if (typeof window !== 'undefined') {
-    // Use setTimeout to defer execution without blocking render
-    setTimeout(() => {
-      const store = useDepartmentsStore.getState()
-      if (!store.initialized) {
-        store.fetchDepartments()
-      }
-    }, 0)
-  }
-  return true
-})()
+// const initializeDepartments = (() => {
+//   if (typeof window !== 'undefined') {
+//     // Use setTimeout to defer execution without blocking render
+//     setTimeout(() => {
+//       const store = useDepartmentsStore.getState()
+//       if (!store.initialized) {
+//         store.fetchDepartments()
+//       }
+//     }, 0)
+//   }
+//   return true
+// })()
 
 export default function ProtectedAdminLayout({ children }) {
   // Trigger departments fetch on component initialization (no useEffect)
