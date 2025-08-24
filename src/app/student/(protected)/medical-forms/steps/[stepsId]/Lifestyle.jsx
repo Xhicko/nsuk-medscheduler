@@ -4,6 +4,14 @@ import React, { useEffect, forwardRef, useImperativeHandle } from 'react'
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { FloatingLabelInput } from '@/components/custom/floating-label-input'
+import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { ChevronDown as ChevronDownIcon } from 'lucide-react'
 import { SectionCard } from "@/components/custom/section-card"
 import { YesNoSegment } from "@/components/custom/yes-no-segment"
 import { HeartPulse, Activity } from 'lucide-react'
@@ -111,17 +119,51 @@ const Lifestyle = forwardRef(function Lifestyle({ formData = {}, onFormChange = 
 
               {alcoholValue && !readOnly && (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 p-4 border-l-2 border-[#0077B6]/20">
-                  <FloatingLabelInput
-                    id="alcohol_since"
-                    label="Since when (date/age)"
-                    type="date"
-                    register={register('alcohol_since')}
-                    watchedValue={watch('alcohol_since')}
-                    errors={errors.alcohol_since}
-                    isFocused={false}
-                    setIsFocused={() => {}}
-                    disabled={readOnly}
+                  <Controller
+                    control={control}
+                    name="alcohol_since"
+                    render={({ field }) => {
+                      const selected = field.value ? new Date(field.value) : undefined
+                      return (
+                        <div className="flex flex-col gap-2">
+                          <Label className="text-sm">Since when (date/age)</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-between font-normal h-14"
+                                id="alcohol_since"
+                                disabled={readOnly}
+                              >
+                                {selected ? selected.toLocaleDateString() : 'Select date'}
+                                <ChevronDownIcon className="ml-2 h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto bg-white  overflow-hidden p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={selected}
+                                captionLayout="dropdown"
+                                onSelect={(d) => {
+                                  if (!d) {
+                                    field.onChange('')
+                                    return
+                                  }
+                                  // store as YYYY-MM-DD to match previous string/date usage
+                                  const iso = d.toISOString().split('T')[0]
+                                  field.onChange(iso)
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          {errors.alcohol_since && (
+                            <p className="text-sm text-red-600">{errors.alcohol_since.message}</p>
+                          )}
+                        </div>
+                      )
+                    }}
                   />
+
                   <FloatingLabelInput
                     id="alcohol_qty_per_day"
                     label="Quantity per day"

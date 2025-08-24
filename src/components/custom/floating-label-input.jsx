@@ -61,7 +61,7 @@ export const FloatingLabelInput = ({
 
   const mergedClassName = cn(
     sizeClasses,
-    '!rounded !focus:ring-0 !focus:outline-none !focus:ring-offset-0 bg-white',
+    '!w-full !rounded !focus:ring-0 !focus:outline-none !focus:ring-offset-0 bg-white',
     errors
       ? '!border-red-500 !focus:border-red-500'
       : isValid
@@ -71,7 +71,7 @@ export const FloatingLabelInput = ({
   )
 
   return (
-    <div className="relative mb-6">
+    <div className="w-full relative mb-6">
       {icon && (
         <div className="absolute z-10 -translate-y-1/2 left-3 top-1/2">
           <div className="text-[#0077B6] w-5 h-5 flex items-center justify-center">{icon}</div>

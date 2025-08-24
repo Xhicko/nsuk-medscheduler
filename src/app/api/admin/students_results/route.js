@@ -11,7 +11,7 @@ export async function DELETE(request) { return handleRequest(request, 'DELETE') 
 
 async function handleRequest(request, method) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     // Auth

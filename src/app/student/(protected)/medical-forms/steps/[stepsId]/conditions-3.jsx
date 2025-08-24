@@ -44,13 +44,13 @@ const Conditions3 = forwardRef(function Conditions3({ formData = {}, onFormChang
   }))
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+    <form onSubmit={(e) => e.preventDefault()} className="space-y-6 mb-5 mt-5">
       <SectionCard title="Previous Medical Conditions (3/6)" icon={<Info className="h-4 w-4" />}>
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground mb-4">Please continue indicating if you have ever had any of the following conditions:</p>
-          <div className="divide-y">
+          <div className="divide-y ">
             {fields.map((cond) => (
-              <div key={cond.key} className="flex items-center justify-between gap-4 py-3">
+              <div key={cond.key} className="flex items-center justify-between gap-4 py-3 border-b-1 border-[#0077B6]/20 ">
                 <Label className="text-sm">{cond.label}</Label>
                 <Controller control={control} name={cond.key} render={({ field }) => (
                   <YesNoSegment value={!!field.value} onChange={(v) => field.onChange(!!v)} name={cond.key} disabled={readOnly} size="sm" />

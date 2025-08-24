@@ -63,7 +63,7 @@ export default function MedicalFormsView({ initialData, initialStep, visibleStep
                      <span className="font-bold text-[#0077B6]">{progressPercent}%</span>
                   </div>
                   <Progress value={progressPercent} className="h-2 " />
-                           <p className="text-xs  text-[#0077B6] text-center">
+                           <p className="text-xs  text-[#0077B6] text-center mt-1">
                                 Step {currentStepIndex + 1} of {totalSteps}: {stepTitle}
                            </p>
                </div>

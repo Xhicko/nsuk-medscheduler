@@ -84,6 +84,7 @@ export async function POST(request) {
       .eq('id', student.id)
 
     if (updErr) {
+      console.log('Failed to update student after creating auth user:', updErr)
       return NextResponse.json({ error: 'Failed to update student verification' }, { status: 500 })
     }
 
