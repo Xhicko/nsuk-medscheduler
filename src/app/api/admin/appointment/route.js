@@ -5,6 +5,7 @@ import { unauthorized, forbidden, methodNotAllowed, internalServerError } from '
 import { sendScheduleAppointment, sendAppointmentReverted, sendAppointmentMissed, sendAppointmentRescheduled } from '@/lib/email'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import {createSmartNotification}from '@lib/notificationHelpers'
 
 export async function GET(request) {
   return handleRequest(request, 'GET')
@@ -292,7 +293,10 @@ async function handleUpdateAppointment(request, supabase) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
     }
 
-    const nowISO = new Date().toISOString()
+   // Store previous values for notification logic
+   const previousStatus = existing.status;
+   const previousTimeRange = existing.time_range;
+   const nowISO = new Date().toISOString()
 
     const updatePayload = {
       // If undoing to pending, clear time_range; if marking missed, keep existing time_range unless a new one is provided
@@ -333,6 +337,21 @@ async function handleUpdateAppointment(request, supabase) {
 
     if (!data) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+    }
+
+     // Create smart notification based on status change
+    try {
+      await createSmartNotification(supabase, {
+        studentId: data.student_id,
+        appointmentId: data.id,
+        newStatus: updatePayload.status,
+        previousStatus: previousStatus,
+        newTimeRange: updatePayload.time_range,
+        previousTimeRange: previousTimeRange
+      });
+    } catch (notificationError) {
+      console.error('Failed to create notification:', notificationError);
+      // Don't fail the entire request if notification creation fails
     }
 
   // Fire-and-forget email notification only when scheduling

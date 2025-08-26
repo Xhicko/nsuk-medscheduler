@@ -118,7 +118,7 @@ const Lifestyle = forwardRef(function Lifestyle({ formData = {}, onFormChange = 
               </div>
 
               {alcoholValue && !readOnly && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 p-4 border-l-2 border-[#0077B6]/20">
+                <div className="grid grid-cols-1 mt-3 gap-4 sm:grid-cols-2 p-4 border-l-2 border-[#0077B6]/20">
                   <Controller
                     control={control}
                     name="alcohol_since"

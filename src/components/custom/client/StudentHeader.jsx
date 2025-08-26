@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Bell, ClipboardList, LogOut, LayoutDashboard } from "lucide-react"
+import { Bell, ClipboardList, LogOut, LayoutDashboard, FileCheck2 } from "lucide-react"
 import Logo from "@/svg/NSUK_LOGO.svg"
 import { useStudentLogout } from "@/hooks/student/useStudentLogout"
 import { getStepIdByIndex } from '@/config/stepsConfig'
@@ -29,12 +29,11 @@ import { getStepIdByIndex } from '@/config/stepsConfig'
 export default function StudentHeader({ student, loading }) {
   const pathname = usePathname()
   const router = useRouter()
-  const notificationCount = 3
   const { logout, isLoggingOut } = useStudentLogout()
 
   // Normalize incoming student shape (API/store may use camelCase or snake_case)
   const displayName = student?.fullName || student?.full_name || null
-  const displayEmail = student?.email || student?.institutional_email || null
+  const displayEmail = student?.email || student?.institutional_email || null 
 
   const getInitials = (name) => {
     if (!name) return "U"
@@ -50,7 +49,8 @@ export default function StudentHeader({ student, loading }) {
   const studentNav = [
     { title: 'Dashboard', url: '/student/dashboard', id: 'dashboard' },
     { title: 'Medical Forms', url: '/student/medical-forms', id: 'medical-forms' },
-    { title: 'Notifications', url: '/student/notifications', id: 'notifications' },
+  { title: 'Notifications', url: '/student/notifications', id: 'notifications' },
+  { title: 'Results', url: '/student/results', id: 'results' },
   ]
 
   const titleize = (str) => str
@@ -88,6 +88,10 @@ export default function StudentHeader({ student, loading }) {
   const handleMedicalForms = () => {
    if(isMedicalCompleted) return
    router.push(medicalFormsPath)
+  }
+
+  const handleResults = () => {
+    router.push('/student/results')
   }
 
   // Helper function to check if a menu item is active
@@ -242,9 +246,6 @@ export default function StudentHeader({ student, loading }) {
                 >
                   <Bell className={getIconClasses('/student/notifications')} />
                   <span>Notifications</span>
-                  <Badge variant="secondary" className="ml-auto bg-gray-200 rounded-full">
-                    {notificationCount}
-                  </Badge>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem 
@@ -255,6 +256,14 @@ export default function StudentHeader({ student, loading }) {
                 >
                   <ClipboardList className={getIconClasses('/student/medical-forms', isMedicalCompleted)} />
                   <span>Medical Forms</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={handleResults}
+                  className={getMenuItemClasses('/student/results')}
+                >
+                  <FileCheck2  className={getIconClasses('/student/results')} />
+                  <span>Result</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="bg-gray-300"/>
