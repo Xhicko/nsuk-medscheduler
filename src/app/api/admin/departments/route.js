@@ -206,7 +206,12 @@ async function handleGetDepartments(request, supabase) {
           faculties: Object.values(faculties),
           departments: data 
         },
-        { status: 200 }
+        { 
+          status: 200,
+          headers: {
+            'Cache-Control': 'private, max-age=180, stale-while-revalidate=360'
+          }
+        }
       )
     }
 

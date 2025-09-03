@@ -9,8 +9,20 @@ import useDepartmentsStore from '@/store/admin/departmentsStore'
 import { Pencil, Trash2 } from 'lucide-react'
 
 export default function StudentsLogic(initialData){
-   // Students management states
-   const [students, setStudents] = useState(initialData?.students || [])
+   // Helper function to flatten student data consistently
+   const flattenStudentData = (studentsData) => {
+      return studentsData.map(student => ({
+         ...student,
+         faculty_name: student.faculties?.name || 'N/A',
+         department_name: student.departments?.name || 'N/A'
+      }))
+   }
+
+   // Students management states - flatten initial data
+   const [students, setStudents] = useState(() => {
+      const initialStudents = initialData?.students || []
+      return flattenStudentData(initialStudents)
+   })
    const [loading, setLoading] = useState(false)
    const [selectedStudent, setSelectedStudent] = useState(null)
    const [isModalOpen, setIsModalOpen] = useState(false)
@@ -85,12 +97,8 @@ export default function StudentsLogic(initialData){
          const response = await axios.get(`${ADMIN_ENDPOINTS.STUDENTS}?${params.toString()}`)         
          if(response.status === 200){
             const studentsData = response.data.students || []
-            // Flatten the faculty and department data
-            const flattenedStudents = studentsData.map(student => ({
-               ...student,
-               faculty_name: student.faculties?.name || 'N/A',
-               department_name: student.departments?.name || 'N/A'
-            }))
+            // Flatten the faculty and department data using the helper function
+            const flattenedStudents = flattenStudentData(studentsData)
             setStudents(flattenedStudents)
             setTotalStudentsCount(response.data.pagination?.total || 0)
             

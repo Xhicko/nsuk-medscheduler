@@ -8,8 +8,6 @@ export async function POST(request) {
     const body = await request.json()
     const matric_number = String(body?.matric_number || '').trim()
     const password = String(body?.password || '').trim()
-    const faculty_id = body?.faculty_id ? String(body.faculty_id) : null
-    const department_id = body?.department_id ? String(body.department_id) : null
 
     if (!matric_number || !password) {
       return NextResponse.json({ error: 'Matric number and password are required' }, { status: 400 })
@@ -26,7 +24,7 @@ export async function POST(request) {
     // 1) Find student by matric number
     const { data: student, error: studentErr } = await admin
       .from('students')
-      .select('id, matric_number, institutional_email, faculty_id, department_id, signup_status, auth_user_id')
+      .select('id, matric_number, institutional_email, signup_status, auth_user_id')
       .eq('matric_number', matric_number)
       .single()
 
@@ -39,15 +37,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Account is already verified. You can login.' }, { status: 409 })
     }
 
-    // 3) Optional cross-check of faculty/department
-    if (faculty_id && String(student.faculty_id) !== String(faculty_id)) {
-      return NextResponse.json({ error: 'Selected faculty does not match our records' }, { status: 400 })
-    }
-    if (department_id && String(student.department_id) !== String(department_id)) {
-      return NextResponse.json({ error: 'Selected department does not match our records' }, { status: 400 })
-    }
-
-    // 4) Create auth user for the student using institutional email
+    // 3) Create auth user for the student using institutional email
     const email = (student.institutional_email || '').trim()
     if (!email) {
       return NextResponse.json({ error: 'Student record has no institutional email' }, { status: 400 })

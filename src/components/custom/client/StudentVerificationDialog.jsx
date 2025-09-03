@@ -32,15 +32,11 @@ export default function StudentVerificationDialog({
   onOpenChange,
   onSubmit,
   isLoading = false,
-  faculties = [], // [{id, name}]
-  departments = [], // [{id, name}]
 }) {
   // Local form state (kept internal to the dialog)
   const [matric, setMatric] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [facultyId, setFacultyId] = useState("")
-  const [departmentId, setDepartmentId] = useState("")
   const [errors, setErrors] = useState({})
   const [isMatricFocused, setIsMatricFocused] = useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
@@ -48,23 +44,12 @@ export default function StudentVerificationDialog({
   const [showPwd, setShowPwd] = useState(false)
   const [showConfirmPwd, setShowConfirmPwd] = useState(false)
 
-  // Derived: departments filtered by selected faculty
-  const filteredDepartments = facultyId
-    ? (departments || []).filter((d) => String(d.faculty_id) === String(facultyId))
-    : (departments || [])
-
-  // Reset department when faculty changes
-  useEffect(() => {
-    setDepartmentId("")
-  }, [facultyId])
 
   // Reset on open/close changes
   useEffect(() => {
     if (!isOpen) {
       setMatric("")
       setPassword("")
-      setFacultyId("")
-      setDepartmentId("")
       setErrors({})
       setConfirmPassword("")
     }
@@ -99,8 +84,6 @@ export default function StudentVerificationDialog({
     onSubmit?.({
       matric_number: data.matricNumber,
       password: data.password,
-      faculty_id: facultyId || null,
-      department_id: departmentId || null,
     })
   }
 
@@ -172,41 +155,7 @@ export default function StudentVerificationDialog({
               size="responsive"
             />
 
-            <div className="grid gap-1.5 sm:gap-2">
-              <Label className="text-xs sm:text-sm" htmlFor="verifyFaculty">Faculty</Label>
-              <Select value={facultyId} onValueChange={setFacultyId}>
-                <SelectTrigger id="verifyFaculty" className="h-10 sm:h-12 !py-2 sm:!py-3 !px-3 sm:!px-4 text-xs sm:text-sm">
-                  <SelectValue placeholder="Select faculty" />
-                </SelectTrigger>
-                <SelectContent className="bg-white max-h-60 text-xs sm:text-sm">
-                  {faculties.length === 0 ? (
-                    <SelectItem className="text-xs sm:text-sm py-2 sm:py-2.5" disabled value="__empty">No faculties available</SelectItem>
-                  ) : (
-                    faculties.map((f) => (
-                      <SelectItem className="text-xs sm:text-sm py-2 sm:py-2.5" key={f.id} value={f.id}>{f.name}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-1.5 sm:gap-2">
-              <Label className="text-xs sm:text-sm" htmlFor="verifyDepartment">Department</Label>
-              <Select value={departmentId} onValueChange={setDepartmentId} disabled={!facultyId}>
-                <SelectTrigger id="verifyDepartment" className="h-10 sm:h-12 !py-2 sm:!py-3 !px-3 sm:!px-4 text-xs sm:text-sm">
-                  <SelectValue placeholder={facultyId ? "Select department" : "Select faculty first"} />
-                </SelectTrigger>
-                <SelectContent className="bg-white max-h-60 text-xs sm:text-sm">
-                  {filteredDepartments.length === 0 ? (
-                    <SelectItem className="text-xs sm:text-sm py-2 sm:py-2.5" disabled value="__empty">No departments available</SelectItem>
-                  ) : (
-                    filteredDepartments.map((d) => (
-                      <SelectItem className="text-xs sm:text-sm py-2 sm:py-2.5" key={d.id} value={d.id}>{d.name}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+      
           </div>
 
           </form>

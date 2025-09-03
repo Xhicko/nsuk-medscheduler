@@ -17,7 +17,12 @@ const getFromSessionStorage = (key) => {
 const saveToSessionStorage = (key, data) => {
   if (typeof window === 'undefined') return
   try {
-    sessionStorage.setItem(key, JSON.stringify(data))
+    // Add timestamp for cache expiration
+    const dataWithTimestamp = {
+      ...data,
+      timestamp: Date.now()
+    }
+    sessionStorage.setItem(key, JSON.stringify(dataWithTimestamp))
   } catch (error) {
     console.error('Error saving to sessionStorage:', error)
   }
@@ -47,9 +52,32 @@ const useFacultiesStore = create((set, get) => {
 
     // Actions
     fetchFaculties: async () => {
-      // Don't fetch if already loading or if data exists and initialized
       const { loading, faculties, initialized } = get()
-      if (loading || (faculties.length > 0 && initialized)) {
+      
+      // Return immediately if already loading
+      if (loading) {
+        return
+      }
+
+      // Check for cached data with expiration (5 minutes)
+      const stored = getFromSessionStorage(STORAGE_KEY)
+      if (stored?.initialized && stored?.timestamp) {
+        const fiveMinutes = 5 * 60 * 1000
+        const isNotExpired = (Date.now() - stored.timestamp) < fiveMinutes
+        if (isNotExpired && stored.faculties?.length > 0) {
+          // Use cached data
+          set({
+            faculties: stored.faculties,
+            loading: false,
+            initialized: true,
+            error: null
+          })
+          return
+        }
+      }
+
+      // Don't fetch if data exists and initialized (for current session)
+      if (faculties.length > 0 && initialized) {
         return
       }
 
@@ -61,7 +89,7 @@ const useFacultiesStore = create((set, get) => {
         if (response.status === 200) {
           const facultiesData = response.data.faculties || []
           
-          // Save to session storage
+          // Save to session storage with timestamp
           const storeData = {
             faculties: facultiesData,
             initialized: true

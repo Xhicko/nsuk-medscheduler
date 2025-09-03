@@ -223,6 +223,8 @@ export default function MedicalFormsView({
                   title="Medical Form Details"
                />
 
+               
+
          {/* Confirmation Dialog for Delete */}
          <ConfirmationDialog
             isOpen={isDeleteModalOpen}

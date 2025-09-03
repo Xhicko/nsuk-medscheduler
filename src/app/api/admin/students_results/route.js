@@ -52,7 +52,7 @@ async function handleGetResults(request, supabase) {
     const search = searchParams.get('search') || ''
     const facultyFilter = searchParams.get('faculty')
     const departmentFilter = searchParams.get('department')
-    const statusFilter = searchParams.get('status') // 'ready' | 'notified' | 'all'
+    const statusFilter = searchParams.get('status') 
 
     const needsStudentJoin = Boolean(
       (facultyFilter && facultyFilter !== 'all') ||
@@ -122,6 +122,19 @@ async function handleGetResults(request, supabase) {
         notified_at,
         created_at,
         updated_at,
+        blood_group,
+        genotype,
+        hemoglobin_status,
+        hemoglobin_value,
+        wbc_status,
+        wbc_value,
+        platelets_status,
+        platelets_value,
+        blood_sugar_status,
+        blood_sugar_value,
+        hiv_result,
+        hepatitis_b_result,
+        hepatitis_c_result,
         students${needsStudentJoin ? '!inner' : ''} (
           id,
           matric_number,
@@ -179,12 +192,15 @@ async function handleGetResults(request, supabase) {
   }
 }
 
-// POST: Notify a student (set notified=true, notified_at=now)
+// POST: Save medical results and notify student
 async function handleNotifyStudent(request, supabase) {
   try {
     const body = await request.json()
     const id = body?.id
+    const resultData = body?.resultData
+
     if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+    if (!resultData) return NextResponse.json({ error: 'resultData is required' }, { status: 400 })
 
     // Load target
     const { data: existing, error: fetchErr } = await supabase
@@ -200,9 +216,30 @@ async function handleNotifyStudent(request, supabase) {
 
     const nowISO = new Date().toISOString()
 
+    // Prepare update data with medical results
+    const updateData = {
+      notified: true,
+      notified_at: nowISO,
+      updated_at: nowISO,
+      // Medical result fields
+      blood_group: resultData.bloodGroup,
+      genotype: resultData.genotype,
+      hemoglobin_status: resultData.hemoglobinStatus,
+      hemoglobin_value: parseFloat(resultData.hemoglobinValue) || null,
+      wbc_status: resultData.wbcStatus,
+      wbc_value: parseFloat(resultData.wbcValue) || null,
+      platelets_status: resultData.plateletsStatus,
+      platelets_value: parseInt(resultData.plateletsValue) || null,
+      blood_sugar_status: resultData.bloodSugarStatus,
+      blood_sugar_value: parseFloat(resultData.bloodSugarValue) || null,
+      hiv_result: resultData.hivResult,
+      hepatitis_b_result: resultData.hepatitisBResult,
+      hepatitis_c_result: resultData.hepatitisCResult,
+    }
+
     const { data, error } = await supabase
       .from('result_notifications')
-      .update({ notified: true, notified_at: nowISO, updated_at: nowISO })
+      .update(updateData)
       .eq('id', id)
       .select('*')
       .single()
@@ -225,25 +262,47 @@ async function handleNotifyStudent(request, supabase) {
       console.error('Failed to send result email:', e)
     }
 
-    return NextResponse.json({ message: 'Student notified successfully', notification: data }, { status: 201 })
+    return NextResponse.json({ message: 'Results saved and student notified successfully', notification: data }, { status: 201 })
   } catch (error) {
     console.error('Error in handleNotifyStudent:', error)
-    return NextResponse.json({ error: 'Failed to notify student' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to save results and notify student' }, { status: 500 })
   }
 }
 
-// PUT: Revert notified -> ready or update flags
+// PUT: Revert notified -> ready or update medical results
 async function handleUpdateResult(request, supabase) {
   try {
     const body = await request.json()
     const id = body?.id
     const status = body?.status
+    const resultData = body?.resultData
+    const action = body?.action
+
     if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
 
     const updateData = { updated_at: new Date().toISOString() }
+
+    // Handle revert to ready
     if (status === 'ready') {
       updateData.notified = false
       updateData.notified_at = null
+    }
+    
+    // Handle medical results update
+    if (action === 'update_results' && resultData) {
+      updateData.blood_group = resultData.bloodGroup
+      updateData.genotype = resultData.genotype
+      updateData.hemoglobin_status = resultData.hemoglobinStatus
+      updateData.hemoglobin_value = parseFloat(resultData.hemoglobinValue) || null
+      updateData.wbc_status = resultData.wbcStatus
+      updateData.wbc_value = parseFloat(resultData.wbcValue) || null
+      updateData.platelets_status = resultData.plateletsStatus
+      updateData.platelets_value = parseInt(resultData.plateletsValue) || null
+      updateData.blood_sugar_status = resultData.bloodSugarStatus
+      updateData.blood_sugar_value = parseFloat(resultData.bloodSugarValue) || null
+      updateData.hiv_result = resultData.hivResult
+      updateData.hepatitis_b_result = resultData.hepatitisBResult
+      updateData.hepatitis_c_result = resultData.hepatitisCResult
     }
 
     const { data, error } = await supabase
@@ -255,7 +314,8 @@ async function handleUpdateResult(request, supabase) {
 
     if (error) return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
 
-    return NextResponse.json({ message: 'Result updated successfully', notification: data }, { status: 200 })
+    const message = action === 'update_results' ? 'Medical results updated successfully' : 'Result updated successfully'
+    return NextResponse.json({ message, notification: data }, { status: 200 })
   } catch (error) {
     console.error('Error in handleUpdateResult:', error)
     return NextResponse.json({ error: 'Failed to update' }, { status: 500 })

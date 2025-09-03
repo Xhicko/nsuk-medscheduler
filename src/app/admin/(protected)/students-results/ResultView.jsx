@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DataTable } from '@/components/custom/admin/data-table'
 import { ConfirmationDialog } from '@/components/custom/admin/ConfirmationDialog'
+import ResultSheet from './ResultSheet'
+import EditResultSheet from './EditResultSheet'
 
 export default function ResultView({
   // Panel
@@ -35,16 +37,41 @@ export default function ResultView({
   closeDeleteConfirm = () => {},
   handleConfirmDelete = () => {},
   isDeleting = false,
-  // notify confirm
-  isNotifyConfirmOpen = false,
-  closeNotifyConfirm = () => {},
-  handleConfirmNotify = () => {},
-  isNotifying = false,
+  selectedItem = null,
+
+ // Notify confirmation
+   handleConfirmResult,
+   closeResultConfirm,
+   openResultToNotify,
+   ResultToNotify,
+   saveLoading,
+
+   //Result sheet States
+   isResultSheetOpen,
+   closeResultSheet,
+   sheetResultForm,
+   handleSubmitResults,
+
+  // Edit result sheet states
+  isEditResultSheetOpen,
+  closeEditResultSheet,
+  editSaveLoading,
+  editResultForm,
+  handleEditSubmitResults,
+  resultToEdit,
+
+  // Edit confirmation
+  openEditConfirm,
+  closeEditConfirm,
+  handleConfirmEdit,
+  resultToEditConfirm,
+
   // undo confirm
   isUndoConfirmOpen = false,
   closeUndoConfirm = () => {},
   handleConfirmUndo = () => {},
   isUndoing = false,
+  selectedUndoItem = null,
 }) {
   const handleReload = () => {
     // We'll rely on parent logic to refetch when status changes or other filters change
@@ -196,7 +223,12 @@ export default function ResultView({
         isOpen={isDeleteConfirmOpen}
         onOpenChange={closeDeleteConfirm}
         title="Delete result notification?"
-        description={"This will remove the result notification record for this student."}
+        description={
+          <span>
+            Are you sure you want to remove the result notification record for{' '}
+            <b>{selectedItem?.student_name ?? 'this student'}</b>?
+          </span>
+        }
         onConfirm={handleConfirmDelete}
         confirmText={isDeleting ? 'Deleting…' : 'Delete'}
         cancelText="Cancel"
@@ -205,14 +237,46 @@ export default function ResultView({
 
       {/* Notify confirmation dialog */}
       <ConfirmationDialog
-        isOpen={isNotifyConfirmOpen}
-        onOpenChange={closeNotifyConfirm}
-        title="Notify this student?"
-        description={"We'll send an email letting the student know their result is ready."}
-        onConfirm={handleConfirmNotify}
-        confirmText={isNotifying ? 'Notifying…' : 'Notify'}
+        isOpen={openResultToNotify}
+        onOpenChange={closeResultConfirm}
+        title="Open Result Form?"
+        description={<span>Are you sure you want to open the result form for{' '}<b>{ResultToNotify?.student_name ?? 'this student'}</b>?</span>}
+        onConfirm={handleConfirmResult}
+        confirmText="Yes, Open Result Form"
         cancelText="Cancel"
-        isLoading={isNotifying}
+        isLoading={false}
+      />
+
+      {/* Edit confirmation dialog */}
+      <ConfirmationDialog
+        isOpen={openEditConfirm}
+        onOpenChange={closeEditConfirm}
+        title="Edit Medical Results?"
+        description={<span>Are you sure you want to edit the medical results for{' '}<b>{resultToEditConfirm?.student_name ?? 'this student'}</b>?</span>}
+        onConfirm={handleConfirmEdit}
+        confirmText="Yes, Edit Results"
+        cancelText="Cancel"
+        isLoading={false}
+      />
+
+       {/* Create/Notify Sheet */}
+      <ResultSheet
+         isOpen={isResultSheetOpen}
+         onOpenChange={closeResultSheet}
+         formData={isResultSheetOpen ? ResultToNotify : null}
+         saveLoading={saveLoading}
+         sheetResultForm={sheetResultForm}
+         onSubmitResults={handleSubmitResults}
+      />
+
+      {/* Edit Sheet */}
+      <EditResultSheet
+         isOpen={isEditResultSheetOpen}
+         onOpenChange={closeEditResultSheet}
+         formData={resultToEdit}
+         saveLoading={editSaveLoading}
+         editResultForm={editResultForm}
+         onSubmitResults={handleEditSubmitResults}
       />
 
       {/* Undo confirmation dialog */}
@@ -220,7 +284,12 @@ export default function ResultView({
         isOpen={isUndoConfirmOpen}
         onOpenChange={closeUndoConfirm}
         title="Undo notification?"
-        description={"This will revert the notification status back to Ready."}
+        description={
+          <span>
+            Are you sure you want to revert the notification status back to Ready for{' '}
+            <b>{selectedUndoItem?.student_name ?? 'this student'}</b>?
+          </span>
+        }
         onConfirm={handleConfirmUndo}
         confirmText={isUndoing ? 'Reverting…' : 'Undo'}
         cancelText="Cancel"

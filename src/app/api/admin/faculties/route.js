@@ -90,7 +90,12 @@ async function handleGetFaculties(request, supabase) {
       }
       return NextResponse.json(
         { faculties },
-        { status: 200 }
+        { 
+          status: 200,
+          headers: {
+            'Cache-Control': 'private, max-age=300, stale-while-revalidate=600'
+          }
+        }
       )
     }
 

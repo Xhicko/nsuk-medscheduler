@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
-import { XIcon } from "lucide-react"
+// import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -18,11 +18,11 @@ function SheetTrigger({
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
-function SheetClose({
-  ...props
-}) {
-  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
-}
+// function SheetClose({
+//   ...props
+// }) {
+//   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
+// }
 
 function SheetPortal({
   ...props
@@ -70,11 +70,11 @@ function SheetContent({
         )}
         {...props}>
         {children}
-        <SheetPrimitive.Close
+        {/* <SheetPrimitive.Close
           className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-all duration-200 hover:opacity-100 hover:bg-[#0077B6] focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none cursor-pointer group">
           <XIcon className="size-4 transition-colors duration-200 group-hover:text-white" />
           <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        </SheetPrimitive.Close> */}
       </SheetPrimitive.Content>
     </SheetPortal>)
   );
@@ -131,7 +131,7 @@ function SheetDescription({
 export {
   Sheet,
   SheetTrigger,
-  SheetClose,
+//   SheetClose,
   SheetContent,
   SheetHeader,
   SheetFooter,

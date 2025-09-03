@@ -128,44 +128,19 @@ export default function LoginLogic() {
     }
 
          // Open verification dialog immediately, then lazy-load lookups in background
-         const openVerification = () => {
+      const openVerification = () => {
              setIsVerifyOpen(true)
-             if (!faculties.length || !departments.length) {
-                // fire-and-forget; don't block modal open
-                axios.get(STUDENT_ENDPOINTS.LOOKUPS)
-                   .then(({ data }) => {
-                      setFaculties(data?.faculties || [])
-                      setDepartments(data?.departments || [])
-                   })
-                   .catch(() => {
-                      // keep empty lists; dialog still usable
-                   })
-             }
          }
+
       const closeVerification = () => setIsVerifyOpen(false)
 
-   // Optionally fetch faculties/departments if still empty (used on submit as a safety net)
-      const ensureListsLoaded = async () => {
-         if (faculties.length && departments.length) return
-         try {
-            const { data } = await axios.get(STUDENT_ENDPOINTS.LOOKUPS)
-            setFaculties(data.faculties || [])
-            setDepartments(data.departments || [])
-         } catch (e) {
-            setFaculties([])
-            setDepartments([])
-         }
-      }
-
-      const HandleVerifySubmit = async ({ matric_number, password, faculty_id, department_id }) => {
+      const HandleVerifySubmit = async ({ matric_number, password}) => {
          setVerifyLoading(true)
          try {
             await ensureListsLoaded()
             const res = await axios.post(STUDENT_ENDPOINTS.AUTH.VERIFY, {
                matric_number,
                password,
-               faculty_id,
-               department_id,
             })
             if (res.status === 200) {
                toast.success(res.data?.message || 'Verification successful')
@@ -182,7 +157,6 @@ export default function LoginLogic() {
    return{
    handleSubmit,
    HandleLogin,
-   // verification dialog controls
    isVerifyOpen,
    setIsVerifyOpen,
    verifyLoading,
@@ -190,21 +164,20 @@ export default function LoginLogic() {
    closeVerification,
    HandleVerifySubmit,
    faculties,
-   departments,
-      isTransitioning,
-      buttonLoading,
-      showPassword, 
-      setShowPassword,
-      isMatricNumberFocused, 
-      setIsMatricNumberFocused,
-      isPasswordFocused, 
-      setIsPasswordFocused,
-      watchedMatricNumber,
-      watchedPassword,
-      isFormReadyToSubmit,
-      isMatricNumberValid,
-      isPasswordValid,
-      errors,
-      register,
+   isTransitioning,
+   buttonLoading,
+   showPassword, 
+   setShowPassword,
+   isMatricNumberFocused, 
+   setIsMatricNumberFocused,
+   isPasswordFocused, 
+   setIsPasswordFocused,
+   watchedMatricNumber,
+   watchedPassword,
+   isFormReadyToSubmit,
+   isMatricNumberValid,
+   isPasswordValid,
+   errors,
+   register,
    }
 }

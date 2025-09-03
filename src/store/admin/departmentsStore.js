@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import axios from 'axios'
 import { ADMIN_ENDPOINTS } from '@/config/adminConfig'
 
-// Helper functions for session storage
+// Helper functions for session storage - optimized for performance
 const getFromSessionStorage = (key) => {
   if (typeof window === 'undefined') return null
   try {
@@ -16,10 +16,20 @@ const getFromSessionStorage = (key) => {
 
 const saveToSessionStorage = (key, data) => {
   if (typeof window === 'undefined') return
-  try {
-    sessionStorage.setItem(key, JSON.stringify(data))
-  } catch (error) {
-    console.error('Error saving to sessionStorage:', error)
+  
+  // Use requestIdleCallback for completely non-blocking storage operations
+  const saveOperation = () => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(data))
+    } catch (error) {
+      console.error('Error saving to sessionStorage:', error)
+    }
+  }
+
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(saveOperation, { timeout: 1000 })
+  } else {
+    setTimeout(saveOperation, 0)
   }
 }
 
@@ -90,9 +100,27 @@ const useDepartmentsStore = create((set, get) => {
 
     // Original Actions
     fetchDepartments: async () => {
-      // Don't fetch if already loading or if data exists and initialized
-      if (get().loading || (get().initialized && get().faculties.length > 0)) {
+      // Don't fetch if already loading
+      if (get().loading) {
         return
+      }
+
+      // Use cached data if available and not expired (5 minutes)
+      const stored = getFromSessionStorage(STORAGE_KEY)
+      if (stored?.initialized && stored?.timestamp) {
+        const fiveMinutes = 5 * 60 * 1000
+        const isNotExpired = (Date.now() - stored.timestamp) < fiveMinutes
+        if (isNotExpired && stored.faculties?.length > 0) {
+          // Use cached data
+          set({
+            faculties: stored.faculties,
+            departments: stored.departments,
+            loading: false,
+            initialized: true,
+            error: null
+          })
+          return
+        }
       }
 
       set({ loading: true, error: null })
@@ -112,11 +140,12 @@ const useDepartmentsStore = create((set, get) => {
             error: null
           }
           
-          // Save to session storage
+          // Save to session storage with timestamp (non-blocking)
           saveToSessionStorage(STORAGE_KEY, {
             faculties: storeData.faculties,
             departments: storeData.departments,
-            initialized: true
+            initialized: true,
+            timestamp: Date.now()
           })
           
           set(storeData)

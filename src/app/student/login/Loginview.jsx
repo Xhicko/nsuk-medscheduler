@@ -18,10 +18,7 @@ export default function LoginPage() {
    setIsVerifyOpen,
    verifyLoading,
    openVerification,
-   closeVerification,
    HandleVerifySubmit,
-   faculties,
-   departments,
    isTransitioning,
    buttonLoading,
    showPassword, 
@@ -114,8 +111,6 @@ export default function LoginPage() {
                 onOpenChange={setIsVerifyOpen}
                 onSubmit={HandleVerifySubmit}
                 isLoading={verifyLoading}
-                faculties={faculties}
-                departments={departments}
               />
             </div>
           </CardContent>
