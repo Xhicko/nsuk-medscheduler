@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// POST /api/student/verify
-// Body: { matric_number: string, password: string, faculty_id?: string, department_id?: string }
 export async function POST(request) {
   try {
     const body = await request.json()

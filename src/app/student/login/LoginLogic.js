@@ -36,8 +36,6 @@ export default function LoginLogic() {
    const [isPasswordFocused, setIsPasswordFocused] = useState(false)
    const [isVerifyOpen, setIsVerifyOpen] = useState(false)
    const [verifyLoading, setVerifyLoading] = useState(false)
-   const [faculties, setFaculties] = useState([])
-   const [departments, setDepartments] = useState([])
    const router = useRouter()
 
    const {
@@ -135,9 +133,9 @@ export default function LoginLogic() {
       const closeVerification = () => setIsVerifyOpen(false)
 
       const HandleVerifySubmit = async ({ matric_number, password}) => {
+     
          setVerifyLoading(true)
          try {
-            await ensureListsLoaded()
             const res = await axios.post(STUDENT_ENDPOINTS.AUTH.VERIFY, {
                matric_number,
                password,
@@ -163,7 +161,6 @@ export default function LoginLogic() {
    openVerification,
    closeVerification,
    HandleVerifySubmit,
-   faculties,
    isTransitioning,
    buttonLoading,
    showPassword, 

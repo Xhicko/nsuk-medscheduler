@@ -34,6 +34,33 @@ export default function ResultsView({
       )
    }
 
+   // No results found state
+   if (!results || results.length === 0) {
+      return (
+         <div className="min-h-screen bg-background flex flex-col">
+            <StudentHeader student={InitialStudentData} />
+            <main className="flex-1 flex items-center justify-center px-4 py-6 xs:px-2 xs:py-4" role="main">
+               <div className="text-center space-y-6 max-w-md mx-auto">
+                  {/* Icon Container */}
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-br from-[#0077B6]/10 to-[#0077B6]/20 rounded-full flex items-center justify-center">
+                     <TestTube className="w-10 h-10 text-[#0077B6]" />
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="space-y-3">
+                     <h2 className="text-2xl font-bold text-[#0077B6]">No Results Available Yet</h2>
+                     <p className="text-[#0077B6] leading-relaxed">
+                        Your medical test results haven't been published yet.
+                     </p>
+                  </div>
+                  
+                 
+               </div>
+            </main>
+         </div>
+      )
+   }
+
    const getStatusColor = (status) => {
       switch (status.toLowerCase()) {
          case "normal":
