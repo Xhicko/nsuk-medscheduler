@@ -1,15 +1,10 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { getStepIdByIndex } from '@/config/stepsConfig'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { Clock, CheckCircle, AlertCircle, FileText, XCircle } from "lucide-react"
 
-/**
- * Small presentational field for a read-only profile value.
- * @param {{ label: string, value?: string, fieldKey: string }} props
- */
+
 function ProfileField({ label, value, fieldKey }) {
   return (
     <div className="space-y-2">
@@ -25,11 +20,38 @@ function ProfileField({ label, value, fieldKey }) {
   )
 }
 
-/**
- * Render medical form status card.
- * Expected shape: { status: string, progress_percentage?: number, current_step?: number, total_steps?: number }
- * @param {{ status: any }} props
- */
+
+function ResultStatus({ resultStatus }) {
+  const isReady = Boolean(resultStatus)
+  
+  const statusConfig = isReady
+    ? { 
+        label: "Ready", 
+        color: "text-green-900", 
+        bgColor: "bg-green-300", 
+        Icon: CheckCircle,
+      }
+    : { 
+        label: "Not Ready", 
+        color: "text-gray-900", 
+        bgColor: "bg-gray-300", 
+        Icon: XCircle,
+      }
+
+  return (
+    <div className="space-y-1">
+      <label className="text-sm font-medium text-white">Medical Results Status</label>
+      <div className={`p-3 rounded-md ${statusConfig.bgColor}`}>
+        <div className="flex items-center gap-2">
+          <statusConfig.Icon className={`h-4 w-4 ${statusConfig.color}`} />
+          <span className={`text-sm font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 function MedicalFormStatus({ status }) {
   if (!status) return null
 
@@ -74,38 +96,9 @@ function MedicalFormStatus({ status }) {
   )
 }
 
-// Expected student shape (from dashboard API/store):
-// {
-//   fullName, gender, matricNumber, email, facultyName, departmentName, medicalFormStatus
-// }
-/**
- * Student Profile Card for the dashboard.
- * @param {{ student: {
- *   fullName?: string,
- *   gender?: string,
- *   matricNumber?: string,
- *   email?: string,
- *   facultyName?: string,
- *   departmentName?: string,
- *   medicalFormStatus?: { status: string, progress_percentage?: number, current_step?: number, total_steps?: number }
- * } }} props
- */
+
 export default function StudentProfileCard({ student }) {
-  const router = useRouter()
   const formattedGender = student?.gender ? student.gender.charAt(0).toUpperCase() + student.gender.slice(1) : ''
-
-  const studentCurrentStepIndex = student?.medicalFormStatus?.current_step ?? student?.medical_form_status?.current_step ?? 0
-  const canonicalMedicalStepId = getStepIdByIndex(studentCurrentStepIndex)
-  const medicalFormsPath = `/student/medical-forms/steps/${canonicalMedicalStepId}`
-
-    // Determine if medical form is completed
-  const medicalStatusFlag = student?.medicalFormStatus?.status
-  const isMedicalCompleted = medicalStatusFlag === "completed"
-
-    const handleFillMedicalForm = () => {
-    if (isMedicalCompleted) return
-    router.push(medicalFormsPath)
-  }
 
   return (
     <Card className="w-full bg-[#0077B6] border-none">
@@ -129,23 +122,9 @@ export default function StudentProfileCard({ student }) {
           <ProfileField label="Department" value={student?.departmentName} fieldKey="department" />
 
           <MedicalFormStatus status={student?.medicalFormStatus} />
-        </div>
 
-        <div className="mt-6 pt-4 border-t border-white">
-          <Button
-            onClick={handleFillMedicalForm}
-            disabled={isMedicalCompleted}
-            aria-disabled={isMedicalCompleted}
-            className={`cursor-pointer w-full ${
-              isMedicalCompleted
-                ? "bg-gray-900 text-gray-600 cursor-not-allowed"
-                : "bg-white hover:bg-white/90 text-[#0077B6] hover:text-[#0077B6]/90"
-            }`}
-            size="lg"
-          >
-            <FileText className={`h-5 w-5 mr-2 ${isMedicalCompleted ? 'text-gray-600' : ''}`} />            
-            Fill Medical Form
-          </Button>
+          <ResultStatus resultStatus={student?.resultStatus} />
+
         </div>
 
         <div className="mt-4 pt-4 border-t border-white">

@@ -247,6 +247,26 @@ async function handleNotifyStudent(request, supabase) {
 
     if (error) return NextResponse.json({ error: 'Failed to update notification' }, { status: 500 })
 
+    // Update student's result_status to true when notifying them of ready results
+    try {
+      const { error: studentUpdateError } = await supabase
+        .from('students')
+        .update({ 
+          result_status: true,
+          updated_at: nowISO 
+        })
+        .eq('id', existing.student_id)
+        .eq('result_status', false) // Only update if currently false
+
+      if (studentUpdateError) {
+        console.error('Failed to update student result_status:', studentUpdateError)
+        // Don't fail the entire request if this update fails
+      }
+    } catch (studentError) {
+      console.error('Error updating student result_status:', studentError)
+      // Don't fail the entire request if student update fails
+    }
+
     // Create smart notification for result ready
     try {
       await createSmartNotification(supabase, {
@@ -327,6 +347,28 @@ async function handleUpdateResult(request, supabase) {
       .single()
 
     if (error) return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
+
+    // If reverting to ready status, update student's result_status back to false
+    if (status === 'ready') {
+      try {
+        const { error: studentUpdateError } = await supabase
+          .from('students')
+          .update({ 
+            result_status: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', data.student_id)
+          .eq('result_status', true) // Only update if currently true
+
+        if (studentUpdateError) {
+          console.error('Failed to update student result_status to false:', studentUpdateError)
+          // Don't fail the entire request if this update fails
+        }
+      } catch (studentError) {
+        console.error('Error reverting student result_status:', studentError)
+        // Don't fail the entire request if student update fails
+      }
+    }
 
     const message = action === 'update_results' ? 'Medical results updated successfully' : 'Result updated successfully'
     return NextResponse.json({ message, notification: data }, { status: 200 })

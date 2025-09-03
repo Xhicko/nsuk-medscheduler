@@ -26,6 +26,7 @@ export default async function Page() {
         matric_number,
         institutional_email,
         medical_form_status,
+        result_status,
         signup_status,
         faculties:faculty_id ( name ),
         departments:department_id ( name )
@@ -42,6 +43,7 @@ export default async function Page() {
         facultyName: student.faculties?.name || null,
         departmentName: student.departments?.name || null,
         medicalFormStatus: student.medical_form_status || { status: 'not_started', progress_percentage: 0, current_step: 0 },
+        resultStatus: student.result_status
       }
     }
   } catch {}
