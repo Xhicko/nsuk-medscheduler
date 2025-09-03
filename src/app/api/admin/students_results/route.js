@@ -3,6 +3,7 @@ import { unauthorized, forbidden, methodNotAllowed, internalServerError } from '
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { sendResultReady } from '@/lib/email'
+import { createSmartNotification } from '@/lib/notificationHelpers'
 
 export async function GET(request) { return handleRequest(request, 'GET') }
 export async function POST(request) { return handleRequest(request, 'POST') }
@@ -245,6 +246,19 @@ async function handleNotifyStudent(request, supabase) {
       .single()
 
     if (error) return NextResponse.json({ error: 'Failed to update notification' }, { status: 500 })
+
+    // Create smart notification for result ready
+    try {
+      await createSmartNotification(supabase, {
+        studentId: existing.student_id,
+        notificationType: 'result_ready',
+        resultNotificationId: data.id,
+        resultData: resultData
+      });
+    } catch (notificationError) {
+      console.error('Failed to create smart notification:', notificationError);
+      // Don't fail the entire request if notification creation fails
+    }
 
     // Send Result Ready email (HTML + text)
     try {
