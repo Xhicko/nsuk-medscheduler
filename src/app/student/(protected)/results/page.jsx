@@ -1,9 +1,10 @@
-import NotificationsContainer from './NotificationsContainer'
+import ResultsContainer from './ResultsContainer'
 import { getServerSupabase } from '@/lib/supabaseServer'
 
-export const metadata = { title: 'NSUK MedSched - Notifications' }
+export const metadata = { title: 'NSUK MedSched - Results' }
 
-export default async function NotificationsPage() {
+export default async function ResultsPage() {
+
   const supabase = await getServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
@@ -22,24 +23,28 @@ export default async function NotificationsPage() {
     .single()
 
   if (!studentRow || studentRow.signup_status !== 'verified') return null
-   
-  // Fetch notifications for the student
-  const { data: notifications, error: notificationsError } = await supabase
-    .from('notifications')
+  
+   // Fetch results for the student
+  const { data: results, error: resultsError } = await supabase
+    .from('result_notifications')
     .select(`
       id,
-      title,
-      message,
-      type,
-      category,
-      is_read,
-      created_at,
-      updated_at,
-      appointment_id
+      blood_group,
+      genotype,
+      hemoglobin_status,
+      hemoglobin_value,
+      wbc_status,
+      wbc_value,
+      platelets_status,
+      platelets_value,
+      blood_sugar_status,
+      blood_sugar_value,
+      hiv_result,
+      hepatitis_b_result,
+      hepatitis_c_result
     `)
     .eq('student_id', studentRow.id)
     .order('created_at', { ascending: false })
-
 
   const initialData = {
    student: {
@@ -49,10 +54,10 @@ export default async function NotificationsPage() {
       gender: studentRow.gender,
       medicalFormStatus: studentRow.medical_form_status || { status: 'not_started', progress_percentage: 0, current_step: 0 },
     },
-    notifications: notifications || [],
-    notificationsError: notificationsError?.message || null
+    results: results || [],
+    resultsError: resultsError?.message || null
   }
 
 
-  return <NotificationsContainer initialData={initialData} />
+  return <ResultsContainer initialData={initialData} />
 }

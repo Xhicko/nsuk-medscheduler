@@ -430,8 +430,6 @@ export default function ResultLogic(initialData = null) {
 
     try {
       setSaveLoading(true)
-      console.log('Submitting results Data:', resultFormData);
-
       const response = await axios.post(ADMIN_ENDPOINTS.STUDENTS_RESULTS, {
         id: ResultToNotify.id,
         resultData: resultFormData
